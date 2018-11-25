@@ -55,6 +55,7 @@ finally:
 
 def init(data):
     data.toolWidth = 175
+    data.wrongTool = False
     data.toolHeight = 190
     data.won = False  # if complete task successfully
     data.gameOver = False  # if failed
@@ -97,15 +98,16 @@ def mousePressed(event, data):
 
 
 def keyPressed(event, data):
-    pass
+    if event.keysym == "r":
+        init(data)
 
 
 def timerFired(data):
     updateLeapMotionData(data)
     printLeapMotionData(data)
 
- # Check if grabbing/making a fist, which allows us to pick up and
-            # move around surgical tool
+########Check if grabbing/making a fist, which allows us to pick up and
+            # move around surgical tool###########
 def isGrasping(data):
 
     frame = data.controller.frame()
@@ -119,7 +121,7 @@ def isGrasping(data):
         print('not grabbing')
     return data.isGrabbing
 
-
+########### CHECK DENTAL TOOL COLLISION WITH TOOTH  #############
 def checkToolCollisionWithTooth(data, tooth):
     if (data.tools[data.toolIndex])[2] + data.toolWidth / 2 - \
             10 > tooth[
@@ -137,8 +139,60 @@ def checkToolCollisionWithTooth(data, tooth):
     else:
         return False
 
+########### CHECK IF USING CORRECT TOOL FOR CORRECT TEETH#############
 def useCorrectTool(data,tooth):
-    pass
+    if tooth[4] == 'gray17':
+        return (data.tools[data.toolIndex])[0] == 'Drill'
+    elif tooth[4] == 'khaki':
+        return (data.tools[data.toolIndex])[0] == "Toothbrush"
+    elif tooth[4] == 'white smoke':
+        return True
+    else:
+        return False
+
+
+########### REMOVE / CLEAN TEETH #############
+def doProcedure(data, tooth):
+    if tooth[4] == 'gray17':
+        print('removing rotten tooth')
+        data.topTeeth.remove(tooth)
+    elif tooth[4] == 'khaki':
+        print("cleaning stained tooth")
+        tooth[4] = 'white smoke'
+    elif tooth[4] == 'white smoke':
+        pass
+    else:
+        data.gameOver = True
+###########  DETECTS SWIPE TO CHANGE TOOL  #############
+def detectSwipe(data):
+    frame = data.controller.frame()
+    for gesture in frame.gestures():
+        if gesture.type == Leap.Gesture.TYPE_SWIPE:
+            swipe = SwipeGesture(gesture)
+            # "Wraparound" tools once reach end of tools list
+            if data.toolIndex == len(data.tools) - 1:
+                data.toolIndex = 0
+            else:
+                data.toolIndex += 1
+            print(data.tools[data.toolIndex])
+            print "SWIPING: Swipe id: %d, state: %s, position: %s, " \
+                  "direction: " \
+                  "%s, speed: %f" % (
+                      gesture.id, (gesture.state),
+                      swipe.position, swipe.direction, swipe.speed)
+
+########### CHECK IF USER HAS SUCCESSFULLY COMPLETED TASK #############
+
+def checkGameOver(data):
+    countTeeth = 0
+    for t in data.topTeeth:
+        if t[4] != 'snow' and t[4] != 'white smoke':
+            countTeeth += 1
+    # If no dirty teeth remaining, user has completed the surgery successfully
+    if countTeeth == 0:
+        data.won = True
+    return data.won
+
 
 # Maps out hand location detected by LeapMotion to 2D coordinates on Canvas
 def updateLeapMotionData(data):
@@ -172,68 +226,26 @@ def updateLeapMotionData(data):
                 (data.tools[data.toolIndex])[3] = app_y
                 for tooth in data.topTeeth:
                     if checkToolCollisionWithTooth(data,tooth) == True:
-                        if tooth[4] == 'gray17':
-                            print('removing rotten tooth')
-                            data.topTeeth.remove(tooth)
-                        elif tooth[4] == 'khaki':
-                            print("cleaning stained tooth")
-                            tooth[4] = 'white smoke'
-                        elif tooth[4] == 'white smoke':
-                            continue
-                        else:
-                            data.gameOver = True
+                        if useCorrectTool(data, tooth) == True:
+                            doProcedure(data,tooth)
+                        else: #if use wrong tool
+                            if tooth[4] != 'snow':
+                                data.wrongTool = True
+                            else: #cannot touch white teeth
+                                data.gameOver = True
             else:
                 #If hand not in grasp position, cannot pick up tool
                 (data.tools[data.toolIndex])[2]= data.width-200
                 (data.tools[data.toolIndex])[3] =  data.height-175
 
-        # Swipe gesture to control switching between different surgical tools
-        ######gestures#########
-        for gesture in frame.gestures():
-            if gesture.type == Leap.Gesture.TYPE_SWIPE:
-                swipe = SwipeGesture(gesture)
-                # "Wraparound" tools once reach end of tools list
-                if data.toolIndex == len(data.tools) - 1:
-                    data.toolIndex = 0
-                else:
-                    data.toolIndex += 1
-                print(data.tools[data.toolIndex])
-                print "SWIPING: Swipe id: %d, state: %s, position: %s, " \
-                      "direction: " \
-                      "%s, speed: %f" % (
-                          gesture.id, (gesture.state),
-                          swipe.position, swipe.direction, swipe.speed)
+        detectSwipe(data)
 
 
 def printLeapMotionData(data):
     pass
 
 
-def redrawAll(canvas, data):
-    canvas.create_rectangle(0, 0, data.width, data.height, fill=
-    data.backgroundColor)
-
-    # Background image: default image of a patient's open mouth
-    bg = Image.open('images/openmouth.gif')
-    # resize to fit canvas
-    bgIm = bg.resize((600, 600), Image.ANTIALIAS)
-    bgIm2 = ImageTk.PhotoImage(bgIm)
-    canvas.create_image(data.width / 2, data.height / 2, image=bgIm2)
-    label = Label(image=bgIm2)
-    label.image = bgIm2  # keep a reference!
-
-    data.margin = data.width / 2 - 150
-
-
-    canvas.create_text(data.width / 2, 25, font="Arial 50 bold", text=
-    "Dental Mode")
-    canvas.create_text(data.width - 200, data.height - 75, font="Arial 20 bold",
-                       text='Swipe to change tool')
-    canvas.create_text(data.width - 200, data.height - 50, font="Arial 15 "
-                                                                "bold", text=
-                       "You are using the %s" % data.tools[data.toolIndex][0])
-
-    # Draw top teeth based on stored x/y coordinates in list and color
+def drawTeeth(canvas,data):
     for i in range(len((data.topTeeth))):
         x0 = (data.topTeeth[i])[0]
         y0 = (data.topTeeth[i])[1]
@@ -252,10 +264,7 @@ def redrawAll(canvas, data):
     label = Label(image=toolImg)
     label.image = toolImg  # keep a reference!
 
-
-
-
-    # Draw virtual hand
+def drawHand(canvas,data):
     handGrasp = Image.open(data.handGrasp[2])
     handGrasp2 = handGrasp.resize((125, 125), Image.ANTIALIAS)
     handGrasp3 = ImageTk.PhotoImage(handGrasp2)
@@ -263,48 +272,99 @@ def redrawAll(canvas, data):
     label = Label(image=handGrasp3)
     label.image = handGrasp3
 
+
+
+def drawBackground(canvas,data):
+    canvas.create_rectangle(0, 0, data.width, data.height, fill=
+    data.backgroundColor)
+
+    # Background image: default image of a patient's open mouth
+    bg = Image.open('images/openmouth.gif')
+    # resize to fit canvas
+    bgIm = bg.resize((600, 600), Image.ANTIALIAS)
+    bgIm2 = ImageTk.PhotoImage(bgIm)
+    canvas.create_image(data.width / 2, data.height / 2, image=bgIm2)
+    label = Label(image=bgIm2)
+    label.image = bgIm2  # keep a reference!
+def drawInstructions(canvas,data):
+    canvas.create_text(data.width / 2, 25, font="Arial 50 bold", text=
+    "Dental Mode")
+    canvas.create_text(data.width - 200, data.height - 75, font="Arial 20 bold",
+                       text='Swipe to change tool')
+    canvas.create_text(data.width - 200, data.height - 50, font="Arial 15 "
+                                                                "bold", text=
+                       "You are using the %s" % data.tools[data.toolIndex][0])
+
     # Instructions for user
     canvas.create_text(30, data.height - 65, text=' Navigate hand to grasp '
                                                   'tool.\n Remove rotten '
-                                                  'teeth, clean stained \n '
-                                                  'teeth, and don''t touch '
+                                                  'teeth with DRILL, '
+                                                  'clean stained \n '
+                                                  'teeth with TOOTHBRUSH, '
+                                                  'and don''t '
+                                                  'touch '
                                                   'white teeth!', anchor='w')
+
+
+
+def redrawAll(canvas, data):
+
+    drawBackground(canvas,data)
+    drawInstructions(canvas,data)
+    # Draw top teeth based on stored x/y coordinates in list and color
+    drawTeeth(canvas,data)
+    # Draw virtual hand
+    drawHand(canvas,data)
+
     ############Checking Game Over####################
-    countTeeth = 0
-    for t in data.topTeeth:
-        if t[4] != 'snow' and t[4] != 'white smoke':
-            countTeeth += 1
-    # If no dirty teeth remaining, user has completed the surgery successfully
-    if countTeeth == 0:
-        data.won = True
+    if checkGameOver(data) == True:
     # Draw winning graphics
-    if data.won == True:
-        happyTooth = Image.open('images/happyToothGameOver.gif')
-        happyTooth2 = happyTooth.resize((500, 500), Image.ANTIALIAS)
-        happyTooth3 = ImageTk.PhotoImage(happyTooth2)
-        canvas.create_image(data.width / 2, data.height / 2,
-                            image=happyTooth3)
-        label = Label(image=happyTooth3)
-        label.image = happyTooth3
-        canvas.create_text(data.width / 2, data.height / 2 + 100, font="Arial "
-                                                                       "60 "
-                                                                       "bold",
-                           text="NICE JOB!",
-                           fill='lime green')
+        drawWon(canvas,data)
     # Else draw losing graphics
     if data.gameOver == True:
-        sadTooth = Image.open('images/sadToothGameOver.gif')
-        sadTooth2 = sadTooth.resize((500, 500), Image.ANTIALIAS)
-        sadTooth3 = ImageTk.PhotoImage(sadTooth2)
-        canvas.create_image(data.width / 2, data.height / 2,
-                            image=sadTooth3)
-        label = Label(image=sadTooth3)
-        label.image = sadTooth3
+        drawGameOver(canvas,data)
+
+    if data.wrongTool == True:
+
         canvas.create_text(data.width / 2, data.height / 2 + 100, font="Arial "
                                                                        "60 "
                                                                        "bold",
-                           text="BAD DOCTOR",
+                           text="WRONG TOOL!",
                            fill='red')
+        data.wrongTool = False
+
+def drawWon(canvas,data):
+    happyTooth = Image.open('images/happyToothGameOver.gif')
+    happyTooth2 = happyTooth.resize((500, 500), Image.ANTIALIAS)
+    happyTooth3 = ImageTk.PhotoImage(happyTooth2)
+    canvas.create_image(data.width / 2, data.height / 2,
+                        image=happyTooth3)
+    label = Label(image=happyTooth3)
+    label.image = happyTooth3
+    canvas.create_text(data.width / 2, data.height / 2 + 100, font="Arial "
+                                                                   "60 "
+                                                                   "bold",
+                       text="NICE JOB!",
+                       fill='lime green')
+
+def drawGameOver(canvas,data):
+    sadTooth = Image.open('images/sadToothGameOver.gif')
+    sadTooth2 = sadTooth.resize((500, 500), Image.ANTIALIAS)
+    sadTooth3 = ImageTk.PhotoImage(sadTooth2)
+    canvas.create_image(data.width / 2, data.height / 2,
+                        image=sadTooth3)
+    label = Label(image=sadTooth3)
+    label.image = sadTooth3
+    canvas.create_text(data.width / 2, data.height / 2 + 100, font="Arial "
+                                                                   "60 "
+                                                                   "bold",
+                       text="GAME OVER",
+                       fill='red')
+    canvas.create_text(data.width / 2, data.height / 2 + 150, font="Arial "
+                                                                   "20 "
+                                                                   "bold",
+                       text="Press r to restart",
+                       fill='red')
 
 
 ####################################

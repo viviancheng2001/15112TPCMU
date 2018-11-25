@@ -6,7 +6,7 @@
 import math
 # import Leap, sys, thread, time
 import sys
-
+import os
 sys.path.insert(0, "/Users/viviancheng/Desktop/LeapSDK/lib/x86")
 
 from Leap.Other import Leap
@@ -23,6 +23,14 @@ def returnPoints():
 
 
 def init(data):
+    data.suturePointIndex = 0
+    data.suturePoints = [[data.width / 2 + 20, data.height / 3 + (
+                i * 45)] for i in range(5)]
+    print(data.suturePoints)
+    data.needle = [data.width/2, data.height - 200]
+
+
+
     data.dottedLine = [data.width / 2 - 10, data.height / 3.75,
                        data.width / 2 + 10,
                        data.height / 1.5]
@@ -30,6 +38,7 @@ def init(data):
     data.app_x = None
     data.app_y = None
     data.thumb = False
+    data.preCutText = "Zoom in to begin"
     data.currentBottle = 'images/BOTTLE1.gif'
     data.thumbPressed = True #pressing on syringe
     data.canDraw = False
@@ -44,7 +53,7 @@ def init(data):
     data.isGrabbing = False
     data.currImage = 'images/surgeryPatient.gif'
     data.controller = Leap.Controller()
-    data.mode = "preanesthesia"
+    data.mode = "stitch"
     data.scissors = ['Scissors', 'images/scissors.gif', data.width - 200,
                      data.height - 175]
 
@@ -56,8 +65,12 @@ def init(data):
 
 # Each mode represents one step further into the surgical procedure
 def mousePressed(event, data):
-    if (data.mode == "launch"):
-        launchMousePressed(event, data)
+    if data.mode == "launch":
+        launchMousePressed(event,data)
+    elif (data.mode == "dental"):
+        dentalMousePressed(event, data)
+    elif (data.mode == "precut"):
+        precutMousePressed(event, data)
     elif (data.mode == "cut"):
         cutMousePressed(event, data)
     elif (data.mode == "stitch"):
@@ -70,8 +83,12 @@ def mousePressed(event, data):
 
 # This function controls keyPressed for each mode
 def keyPressed(event, data):
-    if (data.mode == "launch"):
-        launchKeyPressed(event, data)
+    if data.mode == "launch":
+        launchKeyPressed(event,data)
+    elif (data.mode == "dental"):
+        dentalKeyPressed(event, data)
+    elif (data.mode == "precut"):
+        precutKeyPressed(event, data)
     elif (data.mode == "cut"):
         cutKeyPressed(event, data)
     elif (data.mode == "stitch"):
@@ -84,8 +101,12 @@ def keyPressed(event, data):
 
 # This function controls timerFired for each mode
 def timerFired(data):
-    if (data.mode == "launch"):
+    if data.mode == "launch":
         launchTimerFired(data)
+    elif (data.mode == "dental"):
+        dentalTimerFired(data)
+    elif (data.mode == "precut"):
+        precutTimerFired(data)
     elif (data.mode == "cut"):
         cutTimerFired(data)
     elif (data.mode == "stitch"):
@@ -98,8 +119,12 @@ def timerFired(data):
 
 # This function controls redrawAll for each mode
 def redrawAll(canvas, data):
-    if (data.mode == "launch"):
-        launchRedrawAll(canvas, data)
+    if data.mode == "launch":
+        launchRedrawAll(canvas,data)
+    elif (data.mode == 'dental'):
+        dentalRedrawAll(canvas,data)
+    elif (data.mode == "precut"):
+        precutRedrawAll(canvas, data)
     elif (data.mode == "cut"):
         cutRedrawAll(canvas, data)
     elif (data.mode == "stitch"):
@@ -109,13 +134,21 @@ def redrawAll(canvas, data):
     elif (data.mode == "anesthesia"):
         anesthesiaRedrawAll(canvas, data)
 
-
 ####################################
-# launchScreen mode
+# Launch Screen mode
 ####################################
 # mousePressed not used
 def launchMousePressed(event, data):
-    pass
+    if event.x >= data.width/2 + 50 and event.x < data.width/2 + 175 and \
+            event.y < data.height/2 + 100 and event.y >= data.height/2 + 50:
+        data.currImage = 'images/office.jpg'
+        data.mode = "anesthesia"
+
+    elif event.x >= data.width/2 - 175 and event.x < data.width/2 - 50 and \
+            event.y >= data.height / 2 + 50 and event.y < data.height/2 + 100:
+        print("dental")
+        os.system('python Dental.py')
+
 
 
 # If key "p" pressed, start game
@@ -128,10 +161,124 @@ def launchTimerFired(data):
     launchUpdateLeapMotionData(data)
     launchPrintLeapMotionData(data)
 
-
-# From the launch screen, user can begin surgical procedure by zooming in on
-# the patient's wounds through a "pinch" effect detected by leap motion
 def launchUpdateLeapMotionData(data):
+    pass
+
+
+def launchPrintLeapMotionData(data):
+    pass
+
+#CITATION: StackOverflow, https://stackoverflow.com/questions/44099594/how-to
+# -make-a-tkinter-canvas-rectangle-with-rounded-corners?rq=1
+def round_rectangle(canvas, x1, y1, x2, y2, r=25, **kwargs):
+    points = (
+        x1 + r, y1, x1 + r, y1, x2 - r, y1, x2 - r, y1, x2, y1, x2, y1 + r, x2,
+        y1 + r, x2, y2 - r, x2, y2 - r, x2, y2, x2 - r, y2, x2 - r, y2, x1 + r,
+        y2,
+        x1 + r, y2, x1, y2, x1, y2 - r, x1, y2 - r, x1, y1 + r, x1, y1 + r, x1,
+        y1)
+    return canvas.create_polygon(points, smooth=True, **kwargs)
+
+def launchRedrawAll(canvas,data):
+    bg = Image.open('images/opRoom3.jpg')
+    bgIm = bg.resize((700, 600), Image.ANTIALIAS)
+    bgIm2 = ImageTk.PhotoImage(bgIm)
+    canvas.create_image(data.width / 2, data.height / 2, image=bgIm2)
+    label = Label(image=bgIm2)
+    label.image = bgIm2  # keep a reference!
+    text = canvas.create_text(data.width/2, data.height/2 , font = "Arial "
+                                                                      "70 "
+                                                                 "bold",
+                       text = "OPERATE", fill = 'white')
+
+    bbox = canvas.bbox(text)
+    rect_item = canvas.create_rectangle(bbox, outline="black", fill="navy")
+    canvas.tag_raise(text, rect_item)
+
+    drawDentalButton(canvas,data)
+    drawSurgeryButton(canvas,data)
+def drawDentalButton(canvas,data):
+    round_rectangle(canvas, data.width / 2 - 175, data.height / 2 + 50,
+                   data.width / 2 - 50,
+                   data.height / 2 + 100,
+                   fill=
+                   "white")
+    canvas.create_text(data.width/2 - 110, data.height/2 + 75,font =
+    "Arial 20 bold", fill =
+    'black', text = "DENTIST")
+def drawSurgeryButton(canvas,data):
+    round_rectangle(canvas, data.width / 2 + 50, data.height / 2 + 50,
+                    data.width / 2 + 175,
+                    data.height / 2 + 100,
+                    fill=
+                    "black")
+    canvas.create_text(data.width / 2 + 110, data.height / 2 + 75, font =
+    "Arial 20  bold", fill=
+    'white', text="SURGEON")
+
+####################################
+# Dental mode
+####################################
+# mousePressed not used
+def dentalMousePressed(event, data):
+    pass
+
+
+# If key "p" pressed, start game
+def dentalKeyPressed(event, data):
+    pass
+
+
+# Image starts to bounce around screen
+def dentalTimerFired(data):
+    dentalUpdateLeapMotionData(data)
+    dentalPrintLeapMotionData(data)
+
+def dentalUpdateLeapMotionData(data):
+    pass
+
+
+def dentalPrintLeapMotionData(data):
+    pass
+def dentalRedrawAll(canvas,data):
+    pass
+
+####################################
+# precutScreen mode
+####################################
+# mousePressed not used
+def precutMousePressed(event, data):
+    pass
+
+
+# If key "p" pressed, start game
+def precutKeyPressed(event, data):
+    pass
+
+
+# Image starts to bounce around screen
+def precutTimerFired(data):
+    precutUpdateLeapMotionData(data)
+    precutPrintLeapMotionData(data)
+
+
+def checkPinchZoom(data, thumb, index):
+
+
+    tipThumb = thumb.direction
+    tipIndex = index.direction
+    indexSpeed = index.tip_velocity
+    thumbSpeed = thumb.tip_velocity
+    print(math.sqrt((indexSpeed[2]) ** 2))
+    print(math.sqrt((thumbSpeed[2]) ** 2))
+    print('deg', math.degrees(tipThumb.angle_to(tipIndex)))
+
+    return math.degrees(tipThumb.angle_to(tipIndex)) > 30 and \
+            math.sqrt((indexSpeed[2] ** 2)) > 100 and \
+            math.sqrt((thumbSpeed[2] ** 2)) > 50
+# From the precut screen, user can begin surgical procedure by zooming in on
+# the patient's wounds through a "pinch" effect detected by leap motion
+def precutUpdateLeapMotionData(data):
     data.frame = data.controller.frame()
     hands = data.frame.hands
     if hands:
@@ -151,24 +298,24 @@ def launchUpdateLeapMotionData(data):
                         fingers.finger_type(3)[
                             0] not in fingers.extended() and \
                         fingers.finger_type(4)[0] not in fingers.extended():
+                    print("THUMBINDEX")
                     # direction of thumb and index when pinch zooming should
                     # be the same
-                    tipThumb = thumb.direction
-                    tipIndex = index.direction
-                    if tipThumb.angle_to(tipIndex) == tipIndex.angle_to(
-                            tipThumb):
+                    if checkPinchZoom(data, thumb, index) == True:
                         print('pinch zoom')
                         data.currImage = 'images/zoomSurgery.gif'
                         # switch to next mode: 1st step of surgery
                         data.mode = "cut"
 
 
-def launchPrintLeapMotionData(data):
+
+
+def precutPrintLeapMotionData(data):
     pass
 
 
 # Draw out initial view of patient
-def launchRedrawAll(canvas, data):
+def precutRedrawAll(canvas, data):
 
 
     bg = Image.open(data.currImage)
@@ -177,9 +324,12 @@ def launchRedrawAll(canvas, data):
     canvas.create_image(data.width / 2, data.height / 2, image=bgIm2)
     label = Label(image=bgIm2)
     label.image = bgIm2  # keep a reference!
+    canvas.create_text(data.width - 200, data.height / 2 - 250,
+                       font="Arial 25 bold", text="BEGIN SURGERY")
+
     canvas.create_text(data.width - 200, data.height / 2 - 200,
-                       font="Arial 35 bold", text="Zoom in "
-                                                  "to begin")
+                       font="Arial 35 bold", text=data.preCutText)
+
 
 
 
@@ -202,7 +352,7 @@ def preanesthesiaTimerFired(data):
     detectTwist(data)
 
 
-# From the launch screen, user can begin surgical procedure by zooming in on
+# From the precut screen, user can begin surgical procedure by zooming in on
 # the patient's wounds through a "pinch" effect detected by leap motion
 def preanesthesiaUpdateLeapMotionData(data):
     pass
@@ -308,35 +458,22 @@ def anesthesiaTimerFired(data):
     checkCollisionSyringeBottle(data)
 
 
-# From the launch screen, user can begin surgical procedure by zooming in on
+# From the precut screen, user can begin surgical procedure by zooming in on
 # the patient's wounds through a "pinch" effect detected by leap motion
 def anesthesiaUpdateLeapMotionData(data):
 
     frame = data.controller.frame()  # controller is a Leap.Controller object
     hands = frame.hands
-    left = hands.leftmost
     right = hands.rightmost
     app_width = 700
     app_height = 600
-
     iBox = frame.interaction_box  # create 2D interaction box with
-    # dimensions data.widthxdata.height
+    # dimensions data.width, data.height
     # normalize leap Motion coordinates, map out to Canvas coordinates
     #  app_x and app_y
 
-    b = Leap.Bone()
     rightFingers = right.fingers
     thumb = rightFingers.finger_type(0)[0]
-    distalThumbBone = thumb.bone(b.TYPE_DISTAL)
-    interThumbBone = thumb.bone(b.TYPE_INTERMEDIATE)
-
-
-
-
-
-    # detect if number of extended fingers is 2
-
-
 
     rightPosition = right.palm_position
     normalizedPoint = iBox.normalize_point(rightPosition, True)
@@ -344,9 +481,7 @@ def anesthesiaUpdateLeapMotionData(data):
     app_y = (1 - normalizedPoint.y) * app_height
     data.hand[0] = app_x
     data.hand[1] = app_y
-    if data.hand[0] >   data.syringe[0] + 50 and data.hand[0] < data.syringe[
-        0] + 100 and data.hand[1] > data.syringe[1] - 100 and data.hand[1] < \
-            data.syringe[1] - 50:
+    if handCollideSyringe(data) == True:
         print('touched syringe')
         if len(rightFingers.extended()) == 1 and thumb in rightFingers.extended():
             print('thumbs up hoez')
@@ -357,34 +492,58 @@ def anesthesiaUpdateLeapMotionData(data):
             data.syringe[1] = app_y + 50
             data.thumbPressReminder = True
             if checkCollisionSyringeBottle(data) == True:
-                if right.is_right:
-                    if interThumbBone.is_valid and distalThumbBone.is_valid:
-                        print('distal,inter  thumb bone valid')
-                        dirInterBone = interThumbBone.direction
-                        dirDistalBone = distalThumbBone.direction
-                        angleInterDistal = dirInterBone.angle_to(dirDistalBone)
-                        print('angle inter distal:', angleInterDistal)
-                        if angleInterDistal > .75:
-                            if data.liquidHeight <= data.height/ 2 + 85:
-                                data.liquidHeight += 5
-                                if data.liquidHeight > data.height/2 + 85:
-                                    data.successSyringe = True
-                                    data.mode = "launch"
+                if thumbPressDown(data) == True:
+                        if data.liquidHeight <= data.height/ 2 + 85:
+                            data.liquidHeight += 5
+                            if data.liquidHeight > data.height/2 + 85:
+                                data.successSyringe = True
+                                data.currImage = 'images/surgeryPatient.gif'
+                                data.mode = "precut"
 
+
+def checkCollisionSyringeBottle(data):
+    if data.syringe[0] - 70 > data.width/4 - 15 and data.syringe[0] <\
+            data.width/4 + 15  or  data.syringe[1] + 75 > data.height/2 + 30\
+            and data.syringe[1] + 75 < data.height/2 + 90:
+        return True
+    else:
+        return False
+
+
+
+
+
+def handCollideSyringe(data):
+    return data.hand[0] >   data.syringe[0] + 25 and data.hand[0] < \
+           data.syringe[
+               0] + 100 and data.hand[1] > data.syringe[1] - 100 and data.hand[1] < \
+                                                 data.syringe[1] - 25
+
+def thumbPressDown(data):
+    frame = data.controller.frame()  # controller is a Leap.Controller object
+    hands = frame.hands
+    right = hands.rightmost
+    b = Leap.Bone()
+    rightFingers = right.fingers
+    thumb = rightFingers.finger_type(0)[0]
+    distalThumbBone = thumb.bone(b.TYPE_DISTAL)
+    interThumbBone = thumb.bone(b.TYPE_INTERMEDIATE)
+    if interThumbBone.is_valid and distalThumbBone.is_valid:
+        print('distal,inter  thumb bone valid')
+        dirInterBone = interThumbBone.direction
+        dirDistalBone = distalThumbBone.direction
+        angleInterDistal = dirInterBone.angle_to(dirDistalBone)
+        print('angle inter distal:', math.degrees(angleInterDistal))
+        if math.degrees(angleInterDistal) > 60:
+            return True
+        else:
+            return False
 
 def anesthesiaPrintLeapMotionData(data):
     pass
 
 
-# Draw out initial view of patient
-def anesthesiaRedrawAll(canvas, data):
-
-    if data.thumbPressReminder == True:
-        canvas.create_text(data.width-100,data.height/2+5 , fill = 'black',
-                           font = 'Arial 15 bold',
-                           text = "Aim syringe into bottle and press thumb "
-                                  "down ", anchor
-                           = 'e')
+def drawBackgroundAnesthesia(canvas,data):
     bg = Image.open('images/office.jpg')
     # resize to fit canvas
     bgIm = bg.resize((700, 600), Image.ANTIALIAS)
@@ -392,58 +551,59 @@ def anesthesiaRedrawAll(canvas, data):
     canvas.create_image(data.width / 2, data.height / 2, image=bgIm2)
     label = Label(image=bgIm2)
     label.image = bgIm2  # keep a reference!
-    canvas.create_text(50,50, font = "Arial 15 bold", fill = 'black', text =
-    'Fill up the syringe with anesthetic gel in the bottle!', anchor = 'w')
+    canvas.create_text(50, 50, font="Arial 15 bold", fill='black', text=
+    'Fill up the syringe with anesthetic gel in the bottle!', anchor='w')
 
-    #container
+
+def drawBottle(canvas,data):
+    # container
     canvas.create_rectangle(data.width / 4 - 15, data.height / 2 + 30,
                             data.width / 4 + 15, data.height / 2 + 90, fill=
                             'azure2')
-    #liquid
-    canvas.create_rectangle(data.width/4 - 20, data.height / 2 + 40,
-                            data.width/4 + 20, data.height/2  + 90,fill =
-    'white')
+    # liquid
+    canvas.create_rectangle(data.width / 4 - 20, data.height / 2 + 40,
+                            data.width / 4 + 20, data.height / 2 + 90, fill=
+                            'white')
     canvas.create_rectangle(data.width / 4 - 20, data.liquidHeight,
                             data.width / 4 + 20, data.height / 2 + 90, fill=
                             'dodgerblue3')
 
 
+# Draw out initial view of patient
+def anesthesiaRedrawAll(canvas, data):
+    drawBackgroundAnesthesia(canvas,data)
+    if data.thumbPressReminder == True:
+        canvas.create_text(data.width-100,data.height/2+5 , fill = 'black',
+                           font = 'Arial 15 bold',
+                           text = "Aim syringe into bottle and press thumb "
+                                  "down ", anchor
+                           = 'e')
+    drawBottle(canvas,data)
+    drawSyringe(canvas,data)
+    drawHand(canvas,data)
 
-    # bot = Image.open('images/anesbottle.gif')
-    # bot2 = bot.resize((150,150), Image.ANTIALIAS)
-    # bot3 = ImageTk.PhotoImage(bot2)
-    # canvas.create_image(data.width / 4, data.height / 2, image=bot3)
-    # label = Label(image=bot3)
-    # label.image = bot3  # keep a reference!
 
-    hand = Image.open(data.hand[2])
-    hand1 = hand.resize((200, 150), Image.ANTIALIAS)
-    hand2 = ImageTk.PhotoImage(hand1)
-    canvas.create_image(data.hand[0], data.hand[1], image=hand2)
-    label = Label(image=hand2)
-    label.image = hand2 # keep a reference!
-
-    syr = Image.open(data.syringe[2])
-    syr2 = syr.resize((200, 200), Image.ANTIALIAS)
-    syr3 = ImageTk.PhotoImage(syr2)
-    canvas.create_image(data.syringe[0], data.syringe[1], image=syr3)
-    label = Label(image=syr3)
-    label.image = syr3  # keep a reference!
     if data.successSyringe == True:
         canvas.create_text(data.width/2, data.height/2, font = "Arial 30 "
                                                                "bold",
                            fill = 'navy', text = 'Succesfully filled '
                                                          'syringe!')
 
+def drawHand(canvas,data):
+    hand = Image.open(data.hand[2])
+    hand1 = hand.resize((200, 150), Image.ANTIALIAS)
+    hand2 = ImageTk.PhotoImage(hand1)
+    canvas.create_image(data.hand[0], data.hand[1], image=hand2)
+    label = Label(image=hand2)
+    label.image = hand2  # keep a reference!
 
-
-def checkCollisionSyringeBottle(data):
-     if data.syringe[0] - 70 > data.width/4 - 15 and data.syringe[0] <\
-             data.width/4 + 15  or  data.syringe[1] + 75 > data.height/2 + 30\
-             and data.syringe[1] + 75 < data.height/2 + 90:
-         return True
-     else:
-         return False
+def drawSyringe(canvas,data):
+    syr = Image.open(data.syringe[2])
+    syr2 = syr.resize((200, 200), Image.ANTIALIAS)
+    syr3 = ImageTk.PhotoImage(syr2)
+    canvas.create_image(data.syringe[0], data.syringe[1], image=syr3)
+    label = Label(image=syr3)
+    label.image = syr3  # keep a reference!
 
 
 ####################################
@@ -467,12 +627,27 @@ def cutTimerFired(data):
     if data.timer1 % 10 == 0:
         data.seconds -= 1
         if data.seconds == 0:
-            if data.hasFailed == False:
+
+            if data.cut == False:
+                data.preCutText = "Try Again!"
+                reinitIncisionMode(data)
+            elif data.hasFailed == False:
                 data.mode = "stitch"  # If not failed, advance to next level
             else:
-                print("Try again!")  # Else try again
-                data.seconds = 10
-                data.mode = 'cut'
+                data.preCutText = "Try Again!"
+                reinitIncisionMode(data)
+def reinitIncisionMode(data):
+    print("Try again!")  # Else try again
+    data.seconds = 10
+    data.cut = False
+    data.currImage = 'images/surgeryPatient.gif'
+    data.lineLst = []
+    data.canDraw = False
+    data.isGrabbing = False
+    data.mode = 'precut'
+
+
+
 
 
 # Have virtual surgical scissors follow user's hand to precisely follow and
@@ -502,6 +677,7 @@ def cutUpdateLeapMotionData(data):
             data.isGrabbing = True
             print("grabbing")
         else:
+            data.isGrabbing = False #######
             print('not grabbing')
         # If grasp, user will now be able to hold and move around the scissors
         if data.isGrabbing == True:
@@ -512,24 +688,32 @@ def cutUpdateLeapMotionData(data):
             data.app_y = app_y
             # When the scissors first touch a point in dotted line,
             # start cutting
-            if data.scissors[2] >= data.dottedLine[0] and data.scissors[2] <= \
-                    data.dottedLine[2] and data.scissors[3] \
-                    >= data.dottedLine[1] and data.scissors[3] < \
-                    data.dottedLine[3]:
-                data.cut = True
+            checkFirstCut(data)
+        else:
+            data.canDraw = True######added
+            data.scissors[2] = app_x
+            data.scissors[3] = app_y
+            data.app_x = app_x
+            data.app_y = app_y
 
 
 xold = None
 yold = None
 
+def checkFirstCut(data):
+    if data.scissors[2] >= data.dottedLine[0] and data.scissors[2] <= \
+            data.dottedLine[2] and data.scissors[3] \
+            >= data.dottedLine[1] and data.scissors[3] < \
+            data.dottedLine[3]:
+        data.cut = True
 
 
 
 def cutPrintLeapMotionData(data):
     pass
 
+def drawBackground(canvas,data):
 
-def cutRedrawAll(canvas, data):
     bg = Image.open(data.currImage)
     bgIm = bg.resize((700, 600), Image.ANTIALIAS)
     bgIm2 = ImageTk.PhotoImage(bgIm)
@@ -537,7 +721,6 @@ def cutRedrawAll(canvas, data):
     label = Label(image=bgIm2)
     label.image = bgIm2  # keep a reference!
 
-    # Draw out dotted line to use as reference for incision
     canvas.create_line(data.dottedLine[0], data.dottedLine[1],
                        data.dottedLine[2], data.dottedLine[3], fill="gray17",
                        width=5, dash=(2,
@@ -550,18 +733,41 @@ def cutRedrawAll(canvas, data):
                             'Make '
                             'incision '
                             'along line')
+
+    canvas.create_text(data.width / 2, data.height - 50, text="Time Left: " +
+                                                              str(data.seconds),
+                       font="Arial 20 bold",
+                       fill='white')
+    # canvas.create_rectangle(170,150,500,470, fill = 'pink')
+
+
+def cutRedrawAll(canvas, data):
+    drawBackground(canvas,data)
+
+    # Draw out dotted line to use as reference for incision
     # User starts to make incision
-    if data.cut:
+    if data.cut and data.isGrabbing == True:
         global xold, yold
         if xold is not None and yold is not None:
+            if xold <500 and xold > 170 and yold < 470 and yold > 150 and \
+                    data.app_x < 500 and data.app_x > 170 and data.app_y < \
+                    470 and data.app_y > 150:
             # Linelst stores new and old x/y coordinates of hand/scissors,
             # which allows user to draw a continuous smooth line
-            data.lineLst.append((xold, yold, data.app_x, data.app_y))
+                data.lineLst.append((xold, yold, data.app_x, data.app_y))
+        xold = data.app_x
+        yold = data.app_y
+    else:
         xold = data.app_x
         yold = data.app_y
     # Based on coords in data.lineLst, draw out fluid lines to represent the
     # incision
-    if data.canDraw == True and data.isGrabbing == True:
+    drawLine(canvas,data)
+
+    # Draw scissors tool
+    drawScissors(canvas,data)
+def drawLine(canvas,data):
+    if data.canDraw == True:
         for elem in data.lineLst:
             canvas.create_line(elem[0], elem[1], elem[2], elem[3], smooth=True,
                                fill='red', width=10)
@@ -571,13 +777,16 @@ def cutRedrawAll(canvas, data):
             print ("Bounds:", data.dottedLine[0] - 100, data.dottedLine[2] + 100,
                    data.dottedLine[2] - 100 , data.dottedLine[3] + 100)
 
-            if elem[0] < data.dottedLine[0] - 25 or elem[2] > data.dottedLine[2] \
-                    + 25 or elem[1] < data.dottedLine[1] - 25 or elem[3] > \
-                    data.dottedLine[3] + 25:
+            if elem[0] < data.dottedLine[0] - 50 or elem[2] > data.dottedLine[
+                2] \
+                    + 50 or elem[1] < data.dottedLine[1] - 50 or elem[3] > \
+                    data.dottedLine[3] + 50:
                 data.hasFailed = True
                 print("Failed!")
 
-    # Draw scissors tool
+
+
+def drawScissors(canvas,data):
     scissors = Image.open('images/scissors.gif')
     scissors1 = scissors.resize((150, 180), Image.ANTIALIAS)
     scissors2 = ImageTk.PhotoImage(scissors1)
@@ -585,12 +794,6 @@ def cutRedrawAll(canvas, data):
                         image=scissors2)
     label = Label(image=scissors2)
     label.image = scissors2
-
-    canvas.create_text(data.width / 2, data.height - 50, text="Time Left: " +
-                                                              str(data.seconds),
-                       font="Arial 20 bold",
-                       fill='white')
-
 
 ################################
 # stitch mode
@@ -618,12 +821,35 @@ def stitchPrintLeapMotionData(data):
 
 
 def stitchRedrawAll(canvas, data):
-    bg = Image.open('images/woundenhanced.jpg')
+    bg = Image.open('images/wound.gif')
     bgIm = bg.resize((700, 600), Image.ANTIALIAS)
     bgIm2 = ImageTk.PhotoImage(bgIm)
     canvas.create_image(data.width / 2, data.height / 2, image=bgIm2)
     label = Label(image=bgIm2)
     label.image = bgIm2  # keep a reference!
+
+    drawSutureNeedle(canvas,data)
+    drawSuturePoints(canvas,data)
+
+
+def drawSutureNeedle(canvas,data):
+    needle = Image.open('images/sutureNeedle.gif')
+    needle1 = needle.resize((100,220), Image.ANTIALIAS)
+    needle2 = ImageTk.PhotoImage(needle1)
+    canvas.create_image(data.needle[0], data.needle[1],
+                        image=needle2)
+    label = Label(image=needle2)
+    label.image = needle2
+
+def drawSuturePoints(canvas,data):
+    print(len(data.suturePoints))
+    for i in range(len(data.suturePoints)):
+        canvas.create_oval((data.suturePoints[i])[0] - 2,
+                           (data.suturePoints[i])[1] -
+                           2, (data.suturePoints[i])[0] +2,
+                           (data.suturePoints[i])[1] + 2, fill = "black")
+
+
 
 
 
@@ -663,7 +889,7 @@ def run(width=300, height=300):
     data = Struct()
     data.width = width
     data.height = height
-    data.timerDelay = 100  # milliseconds
+    data.timerDelay = 30  # milliseconds
     init(data)
     # create the root and the canvas
     root = Tk()
@@ -679,7 +905,7 @@ def run(width=300, height=300):
     mousePressedWrapper(event, canvas, data))
     root.bind("<Key>", lambda event:
     keyPressedWrapper(event, canvas, data))
-    # and launch the app
+    # and precut the app
     root.mainloop()  # blocks until window is closed
     print("bye!")
 

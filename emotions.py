@@ -1,17 +1,23 @@
+###############################################################################
+
+# CITATION: Powered by OpenCV and deep learning. Utilizes Haar feature-based
+# Cascade. This program is from https://github.com/petercunha/Emotion
+
+###############################################################################
+
 import cv2
 import numpy as np
 from keras.models import load_model
 from statistics import mode
-from utils.datasets import get_labels
-from utils.inference import detect_faces
-from utils.inference import draw_text
-from utils.inference import draw_bounding_box
-from utils.inference import apply_offsets
-from utils.inference import load_detection_model
-from utils.preprocessor import preprocess_input
+from EmotionDetection.utils.datasets import get_labels
+from EmotionDetection.utils.inference import detect_faces
+from EmotionDetection.utils.inference import draw_text
+from EmotionDetection.utils.inference import draw_bounding_box
+from EmotionDetection.utils.inference import apply_offsets
+from EmotionDetection.utils.inference import load_detection_model
+from EmotionDetection.utils.preprocessor import preprocess_input
 
-
-USE_WEBCAM = True # If false, loads video file source
+USE_WEBCAM = True  # If false, loads video file source
 
 # parameters for loading data and images
 emotion_model_path = './models/emotion_model.hdf5'
@@ -22,7 +28,8 @@ frame_window = 10
 emotion_offsets = (20, 40)
 
 # loading models
-face_cascade = cv2.CascadeClassifier('./models/haarcascade_frontalface_default.xml')
+face_cascade = cv2.CascadeClassifier(
+    './models/haarcascade_frontalface_default.xml')
 emotion_classifier = load_model(emotion_model_path)
 
 # getting input model shapes for inference
@@ -39,19 +46,20 @@ video_capture = cv2.VideoCapture(0)
 # Select video or webcam feed
 cap = None
 if (USE_WEBCAM == True):
-    cap = cv2.VideoCapture(0) # Webcam source
+    cap = cv2.VideoCapture(0)  # Webcam source
 
-
-while cap.isOpened(): # True:
+while cap.isOpened():  # True:
     ret, bgr_image = cap.read()
 
-    #bgr_image = video_capture.read()[1]
+    # bgr_image = video_capture.read()[1]
 
     gray_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2GRAY)
     rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
 
-    faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=5,
-			minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
+    faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1,
+                                          minNeighbors=5,
+                                          minSize=(30, 30),
+                                          flags=cv2.CASCADE_SCALE_IMAGE)
 
     for face_coordinates in faces:
 
