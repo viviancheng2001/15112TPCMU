@@ -23,13 +23,19 @@ def returnPoints():
 
 
 def init(data):
+    data.sutureInstruction = "Aim suture needle tip to green dot"
+    data.sutureRightHand = [data.width/1.5, 200]
+    data.sutureLeftHand = [220, data.height-200]
+    data.sutureLines = []
+    data.finishedSuturing = False
+    data.suturingBackground = 'images/wound.gif'
     data.suturePointIndex = 0
     data.suturePoints = [[data.width / 2 + 20, data.height / 3 + (
-                i * 45)] for i in range(5)]
+                i * 50)] for i in range(5)]
     print(data.suturePoints)
     data.needle = [data.width/2, data.height - 200]
 
-
+    data.nextStep = False
 
     data.dottedLine = [data.width / 2 - 10, data.height / 3.75,
                        data.width / 2 + 10,
@@ -809,27 +815,155 @@ def stitchKeyPressed(event, data):
 
 
 def stitchTimerFired(data):
-    pass
+    stitchUpdateLeapMotionData(data)
 
 
 def stitchUpdateLeapMotionData(data):
-    pass
+    frame = data.controller.frame()
+    rightHand = frame.hands.rightmost
+    leftHand = frame.hands.leftmost
 
+    left_pointable =  leftHand.pointables.frontmost
+    right_pointable = rightHand.pointables.frontmost
+
+    data.controller.enable_gesture(Leap.Gesture.TYPE_CIRCLE)
+    data.controller.enable_gesture(Leap.Gesture.TYPE_SCREEN_TAP)
+    for gesture in frame.gestures():
+        if gesture.type is Leap.Gesture.TYPE_CIRCLE:
+            circle = Leap.CircleGesture(gesture)
+            print('circle!!!!')
+
+
+    app_width = 700
+    app_height = 600
+    pointable = right_pointable # finger in most "forward"
+    # position
+    if data.nextStep != True:
+        if pointable.is_valid:
+            iBox = frame.interaction_box  # create 2D interaction box with
+            leapPoint = pointable.stabilized_tip_position
+            normalizedPoint = iBox.normalize_point(leapPoint, True)
+            app_x = normalizedPoint.x * app_width
+            app_y = (1 - normalizedPoint.y) * app_height
+            print ("X: " + str(app_x) + " Y: " + str(app_y))
+
+            data.needle[0] = app_x
+            data.needle[1] = app_y
+            data.sutureRightHand[0], data.sutureRightHand[1] = data.needle[
+                                                                0]+250, \
+                                                     data.needle[1] -100
+            data.sutureLeftHand[1] = data.needle[1] +75
+
+    for i in range(len(data.suturePoints)):
+        if data.needle[0] -35 > (data.suturePoints[i])[0] - 3 and data.needle[
+            0] -35\
+                <= (data.suturePoints[i])[0] +3 and data.needle[1] + 65 \
+                <= (data.suturePoints[i])[1] +3 and data.needle[1]  +65\
+                > (data.suturePoints[i])[1] -3:
+            print("Pierce")
+            data.nextStep = True
+            if data.nextStep == True:
+                data.needle[0] = 35 + (data.suturePoints[i])[0]
+                data.needle[1] = -65 + (data.suturePoints[i])[1]
+                data.sutureInstruction = "Make circular gesture with left " \
+                                         "forceps to knot wire " \
+
+                if detectRotate(data) == True:
+                    print("CIRCLE DETECTEDDDDD")
+                    data.sutureLines.append([(data.suturePoints[i])[0] - 50,
+                                             (data.suturePoints[i])[1],
+                                             (data.suturePoints[i])[0],
+                                             (data.suturePoints[i])[1]])
+                    data.nextStep = False
+                    data.sutureInstruction = "Aim suture needle tip to green " \
+                                             "dot"
+    if len(data.sutureLines) == 5:
+        data.finishedSuturing = True
+        data.nextStep = True
+        if data.finishedSuturing == True:
+            data.suturingBackground = 'images/finishedSuturing.gif'
+
+
+def detectRotate(data):
+    frame = data.controller.frame()
+    leftHand = frame.hands.leftmost
+    rightHand = frame.hands.rightmost
+
+    left_pointable = leftHand.pointables.frontmost
+    # for gesture in frame.gestures():
+    #     if gesture.type is Leap.Gesture.TYPE_SCREEN_TAP:
+    #         screen_tap = Leap.ScreenTapGesture(gesture)
+    for gesture in frame.gestures():
+
+        if gesture.type is Leap.Gesture.TYPE_CIRCLE:
+            if rightHand not in gesture.hands:
+                circle = Leap.CircleGesture(gesture)
+                return True
+
+#
+# def checkNeedleCollision(data):
+#     for i in range(len(data.suturePoints)):
+#         if data.needle[0] -35 > (data.suturePoints[i])[0] - 3 and data.needle[
+#             0] -35\
+#                 <= (data.suturePoints[i])[0] +3 and data.needle[1] + 65 \
+#                 <= (data.suturePoints[i])[1] +3 and data.needle[1]  +65\
+#                 > (data.suturePoints[i])[1] -3:
+#             data.needle[0]= 35+(data.suturePoints[i])[0]
+#             data.needle[1] =-65+ (data.suturePoints[i])[1]
+#             return True
 
 def stitchPrintLeapMotionData(data):
     pass
 
 
 def stitchRedrawAll(canvas, data):
-    bg = Image.open('images/wound.gif')
+    bg = Image.open(data.suturingBackground)
     bgIm = bg.resize((700, 600), Image.ANTIALIAS)
     bgIm2 = ImageTk.PhotoImage(bgIm)
     canvas.create_image(data.width / 2, data.height / 2, image=bgIm2)
     label = Label(image=bgIm2)
     label.image = bgIm2  # keep a reference!
 
+    canvas.create_text(data.width/2, 50, font = "Arial 25 bold", text =
+                                                data.sutureInstruction)
+
+    if len(data.sutureLines) <5:
+        canvas.create_text(data.width / 2, 100, font="Arial 15 bold", text=
+        str(5-len(data.sutureLines)) + " left to go!")
+    else:
+        data.sutureInstruction = "WAY TO GO!"
+        pass
+
+    #LEFTHAND
+    rightHand = Image.open('images/sutureHand.gif')
+    rightHand1= rightHand.resize((700, 600), Image.ANTIALIAS)
+    rightHand2 = ImageTk.PhotoImage(rightHand1)
+    canvas.create_image(data.sutureRightHand[0],data.sutureRightHand[1],
+                        image=rightHand2)
+    label = Label(image=rightHand2)
+    label.image = rightHand2  # keep a reference!
+
+    #LEFTHAND
+    leftHand = Image.open('images/leftHand.gif')
+    leftHand1 = leftHand.resize((520,420), Image.ANTIALIAS)
+    leftHand2 = ImageTk.PhotoImage(leftHand1)
+    canvas.create_image(data.sutureLeftHand[0], data.sutureLeftHand[1],
+                        image=leftHand2)
+    label = Label(image=leftHand2)
+    label.image = leftHand2  # keep a reference!
+
+
+
+
+
+
     drawSutureNeedle(canvas,data)
     drawSuturePoints(canvas,data)
+
+    for j in range(len(data.sutureLines)):
+        [x0,y0,x1,y1] = data.sutureLines[j]
+        canvas.create_line(x0,y0,x1,y1, fill = 'mediumpurple1', width = 4)
+
 
 
 def drawSutureNeedle(canvas,data):
@@ -841,13 +975,18 @@ def drawSutureNeedle(canvas,data):
     label = Label(image=needle2)
     label.image = needle2
 
+    # canvas.create_oval(data.needle[0] - 35 -5, data.needle[1] + 65 -5,
+    #                    data.needle[0] -35 + 5, data.needle[1] + 65 +5,
+    #                    fill = 'mediumpurple1')
+
 def drawSuturePoints(canvas,data):
     print(len(data.suturePoints))
     for i in range(len(data.suturePoints)):
-        canvas.create_oval((data.suturePoints[i])[0] - 2,
+        canvas.create_oval((data.suturePoints[i])[0] - 3,
                            (data.suturePoints[i])[1] -
-                           2, (data.suturePoints[i])[0] +2,
-                           (data.suturePoints[i])[1] + 2, fill = "black")
+                           3, (data.suturePoints[0])[0] +3,
+                           (data.suturePoints[i])[1] + 3, fill = 'yellow green')
+
 
 
 
