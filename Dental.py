@@ -51,6 +51,8 @@ finally:
     controller.config.save()
 
 
+
+
 #######SWIPING SETUP##############
 
 def init(data):
@@ -85,9 +87,9 @@ def init(data):
     data.margin = data.width / 2 - 100
     for i in range(len(data.topTeeth)):
         x0 = data.margin + (i * 40)
-        y0 = data.height / 6
+        y0 = data.height / 7
         x1 = data.margin + ((i + 1) * 40)
-        y1 = data.height / 6 + 35
+        y1 = data.height / 7 + 35
         # Random level of cleanliness for each tooth
         (data.topTeeth[i]) = [x0, y0, x1, y1, random.choice(['khaki', 'snow',
                                                              'gray17'])]
@@ -275,19 +277,24 @@ def drawHand(canvas,data):
 
 
 def drawBackground(canvas,data):
-    canvas.create_rectangle(0, 0, data.width, data.height, fill=
-    data.backgroundColor)
-
-    # Background image: default image of a patient's open mouth
-    bg = Image.open('images/openmouth.gif')
+    bg = Image.open('images/dentistoffice.jpg')
     # resize to fit canvas
-    bgIm = bg.resize((600, 600), Image.ANTIALIAS)
+    bgIm = bg.resize((700, 650), Image.ANTIALIAS)
     bgIm2 = ImageTk.PhotoImage(bgIm)
     canvas.create_image(data.width / 2, data.height / 2, image=bgIm2)
     label = Label(image=bgIm2)
     label.image = bgIm2  # keep a reference!
+
+    # Background image: default image of a patient's open mouth
+    mouth = Image.open('images/openmouth.gif')
+    # resize to fit canvas
+    mouth2 =mouth.resize((600, 650), Image.ANTIALIAS)
+    mouth3 = ImageTk.PhotoImage(mouth2)
+    canvas.create_image(data.width / 2, data.height / 2, image=mouth3)
+    label = Label(image=mouth3)
+    label.image = mouth3 # keep a reference!
 def drawInstructions(canvas,data):
-    canvas.create_text(data.width / 2, 25, font="Arial 50 bold", text=
+    canvas.create_text(data.width / 2, 30, font="Arial 50 bold", text=
     "Dental Mode")
     canvas.create_text(data.width - 200, data.height - 75, font="Arial 20 bold",
                        text='Swipe to change tool')
