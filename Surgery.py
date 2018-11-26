@@ -23,6 +23,9 @@ def returnPoints():
 
 
 def init(data):
+    data.anesthesiaImage = "images/thumbsup.gif"
+    data.anesthesiaInstruction = "Grasp syringe handle with hand in position " \
+                                 "below"
     data.sutureInstruction = "Aim suture needle tip to green dot"
     data.sutureRightHand = [data.width/1.5, 200]
     data.sutureLeftHand = [220, data.height-200]
@@ -59,7 +62,7 @@ def init(data):
     data.isGrabbing = False
     data.currImage = 'images/surgeryPatient.gif'
     data.controller = Leap.Controller()
-    data.mode = "stitch"
+    data.mode = "launch"
     data.scissors = ['Scissors', 'images/scissors.gif', data.width - 200,
                      data.height - 175]
 
@@ -290,8 +293,7 @@ def precutUpdateLeapMotionData(data):
     if hands:
         Hand = None
         for item in hands:
-            if item.is_right:
-                Hand = item
+            Hand = item
         if Hand:
             fingers = Hand.fingers
             # detect if number of extended fingers is 2
@@ -498,19 +500,22 @@ def anesthesiaUpdateLeapMotionData(data):
             data.syringe[1] = app_y + 50
             data.thumbPressReminder = True
             if checkCollisionSyringeBottle(data) == True:
+                data.anesthesiaInstruction = "Press thumb down to fill " \
+                                             "syringe."
+                data.anesthesiaImage = 'images/thumbPress1.gif'
                 if thumbPressDown(data) == True:
-                        if data.liquidHeight <= data.height/ 2 + 85:
-                            data.liquidHeight += 5
-                            if data.liquidHeight > data.height/2 + 85:
-                                data.successSyringe = True
-                                data.currImage = 'images/surgeryPatient.gif'
-                                data.mode = "precut"
+                    if data.liquidHeight <= data.height/ 2 + 85:
+                        data.liquidHeight += 5
+                        if data.liquidHeight > data.height/2 + 85:
+                            data.successSyringe = True
+                            data.currImage = 'images/surgeryPatient.gif'
+                            data.mode = "precut"
 
 
 def checkCollisionSyringeBottle(data):
-    if data.syringe[0] - 70 > data.width/4 - 15 and data.syringe[0] <\
-            data.width/4 + 15  or  data.syringe[1] + 75 > data.height/2 + 30\
-            and data.syringe[1] + 75 < data.height/2 + 90:
+    if data.syringe[0] - 70 > data.width / 4 - 20 and data.syringe[0] - 70 < \
+            data.width / 4 + 20 and data.syringe[1] + 75 > data.height / 2 + 30 \
+            and data.syringe[1] + 75 < data.height / 2 + 90:
         return True
     else:
         return False
@@ -528,7 +533,7 @@ def handCollideSyringe(data):
 def thumbPressDown(data):
     frame = data.controller.frame()  # controller is a Leap.Controller object
     hands = frame.hands
-    right = hands.rightmost
+    right = hands[0]
     b = Leap.Bone()
     rightFingers = right.fingers
     thumb = rightFingers.finger_type(0)[0]
@@ -540,7 +545,7 @@ def thumbPressDown(data):
         dirDistalBone = distalThumbBone.direction
         angleInterDistal = dirInterBone.angle_to(dirDistalBone)
         print('angle inter distal:', math.degrees(angleInterDistal))
-        if math.degrees(angleInterDistal) > 60:
+        if math.degrees(angleInterDistal) > 45:
             return True
         else:
             return False
@@ -557,8 +562,24 @@ def drawBackgroundAnesthesia(canvas,data):
     canvas.create_image(data.width / 2, data.height / 2, image=bgIm2)
     label = Label(image=bgIm2)
     label.image = bgIm2  # keep a reference!
+
+
+
+    # canvas.create_rectangle(data.width-200-80, data.height/2 + 100 - 65,
+    #                         data.width-200+80, data.height/2+100+65,
+    #                         fill = 'red')
+
+    handIm0 = Image.open(data.anesthesiaImage)
+    # resize to fit canvas
+    handIm = handIm0.resize((100,80), Image.ANTIALIAS)
+    handIm2 = ImageTk.PhotoImage(handIm)
+    canvas.create_image(data.width - 180, data.height / 2 + 70, image=handIm2)
+    label = Label(image=handIm2)
+    label.image = handIm2  # keep a reference!
+
     canvas.create_text(50, 50, font="Arial 15 bold", fill='black', text=
     'Fill up the syringe with anesthetic gel in the bottle!', anchor='w')
+
 
 
 def drawBottle(canvas,data):
@@ -577,16 +598,17 @@ def drawBottle(canvas,data):
 
 # Draw out initial view of patient
 def anesthesiaRedrawAll(canvas, data):
+
     drawBackgroundAnesthesia(canvas,data)
-    if data.thumbPressReminder == True:
-        canvas.create_text(data.width-100,data.height/2+5 , fill = 'black',
+    canvas.create_text(data.width-200,data.height/2+7.5, fill = 'black',
                            font = 'Arial 15 bold',
-                           text = "Aim syringe into bottle and press thumb "
-                                  "down ", anchor
-                           = 'e')
+                           text = data.anesthesiaInstruction)
+
+
+
     drawBottle(canvas,data)
-    drawSyringe(canvas,data)
-    drawHand(canvas,data)
+    drawSyringe(canvas, data)
+    drawHand(canvas, data)
 
 
     if data.successSyringe == True:
@@ -594,6 +616,20 @@ def anesthesiaRedrawAll(canvas, data):
                                                                "bold",
                            fill = 'navy', text = 'Succesfully filled '
                                                          'syringe!')
+
+    # canvas.create_oval( data.syringe[0] - 70 - 10, data.syringe[1] +75- 10,
+    #                     data.syringe[0] -70+10, data.syringe[1]+75 + 10, fill =
+    #                     'orange')
+    #
+    #
+    # canvas.create_rectangle(data.width/4 - 20,data.height/2 + 30, data.width/4 +
+    #                         20, data.height/2 + 90, fill = 'green')
+    # drawBottle(canvas, data)
+    #
+
+
+
+
 
 def drawHand(canvas,data):
     hand = Image.open(data.hand[2])
@@ -645,6 +681,7 @@ def cutTimerFired(data):
 def reinitIncisionMode(data):
     print("Try again!")  # Else try again
     data.seconds = 10
+    data.hasFailed = False
     data.cut = False
     data.currImage = 'images/surgeryPatient.gif'
     data.lineLst = []
@@ -874,14 +911,16 @@ def stitchUpdateLeapMotionData(data):
                                              (data.suturePoints[i])[1],
                                              (data.suturePoints[i])[0],
                                              (data.suturePoints[i])[1]])
+                    print('suturelines', len(data.sutureLines))
                     data.nextStep = False
                     data.sutureInstruction = "Aim suture needle tip to green " \
                                              "dot"
-    if len(data.sutureLines) == 5:
-        data.finishedSuturing = True
-        data.nextStep = True
-        if data.finishedSuturing == True:
+        if len(data.sutureLines) >= 5:
+            data.finishedSuturing = True
             data.suturingBackground = 'images/finishedSuturing.gif'
+            data.nextStep = False
+
+
 
 
 def detectRotate(data):
@@ -930,9 +969,20 @@ def stitchRedrawAll(canvas, data):
     if len(data.sutureLines) <5:
         canvas.create_text(data.width / 2, 100, font="Arial 15 bold", text=
         str(5-len(data.sutureLines)) + " left to go!")
-    else:
+    if data.finishedSuturing == True:
         data.sutureInstruction = "WAY TO GO!"
         pass
+
+
+
+
+
+    drawSutureNeedle(canvas,data)
+    drawSuturePoints(canvas,data)
+
+    for j in range(len(data.sutureLines)):
+        [x0,y0,x1,y1] = data.sutureLines[j]
+        canvas.create_line(x0,y0,x1,y1, fill = 'mediumpurple1', width = 4)
 
     #LEFTHAND
     rightHand = Image.open('images/sutureHand.gif')
@@ -956,13 +1006,6 @@ def stitchRedrawAll(canvas, data):
 
 
 
-
-    drawSutureNeedle(canvas,data)
-    drawSuturePoints(canvas,data)
-
-    for j in range(len(data.sutureLines)):
-        [x0,y0,x1,y1] = data.sutureLines[j]
-        canvas.create_line(x0,y0,x1,y1, fill = 'mediumpurple1', width = 4)
 
 
 
