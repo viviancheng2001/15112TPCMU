@@ -19,7 +19,24 @@ from PIL import Image, ImageTk
 
 
 def init(data):
+    data.progressBaby = 300
+    data.babyMoods = ["HAPPY", "CONFUSED", "SCARED", "SAD", "FURIOUS!"]
+    data.babyColors = ["lime green", "gold", 'orange', 'coral1', 'red']
+    data.wonBabyGame = False
+    data.babyMood = 0
+    data.babySyringe = [data.width/2, data.height/2]
+    data.babySpeed = 0
+    data.babyIndex = 0
+    data.babySize = [150,200]
+    data.babyImage = ['images/baby.gif', 'images/baby2.gif',
+                      'images/baby3.gif','images/baby4.gif',
+                      'images/babyCry.gif']
+    data.babyCoord = [data.width / 2, data.height/1.5]
+    data.syringeLocation = [data.babyCoord[0] + 60, data.babyCoord[1] + 15]
+    data.candies = [[data.width/5 - 90,50],[data.width/5+10,50],
+                    [data.width/5+120,50]]
     # Launch Screen medical facts
+
     data.pitch = 0
     data.counting = 0
     data.color = None
@@ -166,6 +183,8 @@ def mousePressed(event, data):
         stitchMousePressed(event, data)
     elif (data.mode == "extract"):
         extractionMousePressed(event, data)
+    elif (data.mode == 'patient'):
+        patientMousePressed(event,data)
     elif (data.mode == "anesthesia"):
         anesthesiaMousePressed(event, data)
     elif (data.mode == "end"):
@@ -182,6 +201,8 @@ def keyPressed(event, data):
         cutKeyPressed(event, data)
     elif (data.mode == "stitch"):
         stitchKeyPressed(event, data)
+    elif (data.mode == 'patient'):
+        patientKeyPressed(event, data)
     elif (data.mode == "extract"):
         extractionKeyPressed(event, data)
     elif (data.mode == "anesthesia"):
@@ -216,6 +237,8 @@ def timerFired(data):
         cutTimerFired(data)
     elif (data.mode == "stitch"):
         stitchTimerFired(data)
+    elif (data.mode == 'patient'):
+        patientTimerFired(data)
     elif (data.mode == "extract"):
         extractionTimerFired(data)
     elif (data.mode == "anesthesia"):
@@ -265,7 +288,8 @@ def redrawAll(canvas, data):
                            text=
                            data.progressText[2])
 
-
+    elif (data.mode == 'patient'):
+        patientRedrawAll(canvas,data)
 
     elif (data.mode == "anesthesia"):
         anesthesiaRedrawAll(canvas, data)
@@ -378,6 +402,8 @@ def drawSurgeryButton(canvas, data):
                        'white', text="SURGEON")
 
 
+
+
 ############################################################################
 # ANESTHESIA MODE
 ############################################################################
@@ -386,8 +412,10 @@ def anesthesiaMousePressed(event, data):
     if leftButtonPressed(event, data):
         data.mode = 'launch'
     elif rightButtonPressed(event, data):
-        data.currImage = 'images/surgeryPatient.gif'
-        data.mode = 'precut'
+        reinitPatient(data)
+        data.mode = 'patient'
+        # data.currImage = 'images/surgeryPatient.gif'
+        # data.mode = 'precut'
 
 
 # keyPressed not used
@@ -449,8 +477,10 @@ def anesthesiaUpdateLeapMotionData(data):
                     data.liquidHeight += 5
                     if data.liquidHeight > data.height / 2 + 85:
                         data.successSyringe = True
-                        data.currImage = 'images/surgeryPatient.gif'
-                        data.mode = "precut"
+                        reinitPatient(data)
+                        data.mode = 'patient'
+                        # data.currImage = 'images/surgeryPatient.gif'
+                        # data.mode = "precut"
 
 
 # Check if hand touching syringe
@@ -582,13 +612,202 @@ def drawSyringe(canvas, data):
     label.image = syr3  # keep a reference!
 
 
+
+
+
+
+
+###############################################################################
+# PATIENT MODE
+###############################################################################
+
+def reinitPatient(data):
+    data.progressBaby = 300
+    data.babyMoods = ["HAPPY", "CONFUSED", "SCARED", "SAD", "FURIOUS!"]
+    data.babyColors = ["lime green", "gold", 'orange', 'coral1', 'red']
+    data.wonBabyGame = False
+    data.babyMood = 0
+    data.babySyringe = [data.width / 2, data.height / 2]
+    data.babySpeed = 0
+    data.babyIndex = 0
+    data.babySize = [150, 200]
+    data.babyImage = ['images/baby.gif', 'images/baby2.gif',
+                      'images/baby3.gif', 'images/baby4.gif',
+                      'images/babyCry.gif']
+    data.babyCoord = [data.width / 2, data.height / 1.5]
+    data.syringeLocation = [data.babyCoord[0] + 60, data.babyCoord[1] + 15]
+    data.candies = [[data.width / 5 - 90, 50], [data.width / 5 + 10, 50],
+                    [data.width / 5 + 120, 50]]
+def patientMousePressed(event, data):
+    if leftButtonPressed(event, data):
+        data.mode = 'anesthesia'
+    elif rightButtonPressed(event, data):
+        data.currImage = 'images/surgeryPatient.gif'
+        data.mode = 'precut'
+
+
+def patientKeyPressed(event, data):
+    pass
+
+
+# Every time timer fired is called, update Leapmotion data
+def patientTimerFired(data):
+    if not data.wonBabyGame == True:
+        data.counting += 1
+        data.babyMood +=1
+        print(data.babyMood)
+        patientUpdateLeapMotionData(data)
+        patientPrintLeapMotionData(data)
+
+
+def patientUpdateLeapMotionData(data):
+    data.frame = data.controller.frame()
+    rightHand = data.frame.hands.rightmost
+
+    right_pointable = rightHand.pointables.frontmost  # detected right finger
+
+    app_width = 700
+    app_height = 600
+    # CITATION: Create 2D interaction box from leapMotion library
+    if right_pointable.is_valid:
+        iBox = data.frame.interaction_box  # create 2D interaction box with
+        leapPointR = right_pointable.stabilized_tip_position
+        normalizedPointR = iBox.normalize_point(leapPointR, True)
+
+
+
+        app_xR = normalizedPointR.x * app_width  # x coord of RH finger
+        app_yR = (1 - normalizedPointR.y) * app_height  # y coord of RH finger
+
+        # Make right hand image, left hand image follow user's hands
+        data.babySyringe[0], data.babySyringe[1] = app_xR, app_yR
+
+    if rightHand.is_valid:
+        handVelX= rightHand.palm_velocity[0]
+        print(handVelX)
+        # handVelY=rightHand.palm_velocity[1]
+        data.babySpeed = handVelX * (data.babyIndex+1/2)
+        data.babyCoord[0] += data.babySpeed
+        data.syringeLocation[0] = data.babyCoord[0] + 60
+        data.syringeLocation[1] = data.babyCoord[1] + 15
+
+    for c in data.candies:
+        if data.babySyringe[0] > c[0] - 50 and data.babySyringe[0] < c[0] + 50 \
+                and \
+                data.babySyringe[
+            1] > 0 \
+                and data.babySyringe[1] < 100:
+            data.candies.remove(c)
+            if data.babyIndex > 0:
+                data.babyIndex -=1
+    if data.babyMood % 50 == 0 and data.babyIndex < 4:
+        data.babyIndex +=1
+
+    if checkInjecting(data) == True:
+        print("INJECtING")
+        data.progressBaby -= 19
+        data.countInject +=1
+        if data.countInject ==10:
+            data.progressBaby = 100
+            data.wonBabyGame = True
+    else:
+        data.countInject = 0
+        data.progressBaby = 300
+
+
+
+def checkInjecting(data):
+    return data.babySyringe[0] - 110 > data.syringeLocation[0] - 8 and \
+           data.babySyringe[0] -110< data.syringeLocation[0] + 8 and \
+           data.babySyringe[1] + 90 < data.syringeLocation[1] + 8and \
+           data.babySyringe[1] + 90 >data.syringeLocation[1] -8
+
+def patientPrintLeapMotionData(data):
+    pass
+
+def patientRedrawAll(canvas,data):
+    bg = Image.open('images/babyOffice.jpg')
+    bg1 = bg.resize((700,600), Image.ANTIALIAS)
+    bg2 = ImageTk.PhotoImage(bg1)
+    canvas.create_image(data.width/2,data.height/2, image=bg2)
+    label = Label(image=bg2)
+    label.image = bg2  # keep a reference!
+
+    drawArrows(canvas, data)
+
+    baby = Image.open(data.babyImage[data.babyIndex])
+    baby1 = baby.resize((300,400), Image.ANTIALIAS)
+    baby2 = ImageTk.PhotoImage(baby1)
+    canvas.create_image(data.babyCoord[0], data.babyCoord[1], image=baby2)
+    label = Label(image=baby2)
+    label.image = baby2  # keep a reference!
+
+    canvas.create_oval(data.syringeLocation[0] - 10, data.syringeLocation[1]
+                       - 10, data.syringeLocation[0] + 10,
+                       data.syringeLocation[1]
+                       + 10,
+                       fill='green')
+
+    s = Image.open('images/babySyringe.gif')
+    s1 = s.resize((300, 250), Image.ANTIALIAS)
+    s2 = ImageTk.PhotoImage(s1)
+    canvas.create_image(data.babySyringe[0], data.babySyringe[1], image=s2)
+    label = Label(image=s2)
+    label.image = s2  # keep a reference!
+
+    for i in data.candies:
+        c = Image.open('images/candies.gif')
+        c1 = c.resize((100,100), Image.ANTIALIAS)
+        c2 = ImageTk.PhotoImage(c1)
+        canvas.create_image(i[0], i[1], image=c2)
+        label = Label(image=c2)
+        label.image = c2  # keep a reference!
+
+    canvas.create_text(data.width/2, data.height-70, font = "Arial 20 bold",
+                       fill =
+    'black',text ="Give the baby anesthesia before he runs away! \n Point "
+                  "syringe tip to green dot")
+
+    canvas.create_text(data.width-170, 50,font = "Arial 27 bold", text =
+    "Baby's mood: " +
+                                                  data.babyMoods[
+                                                      data.babyIndex],
+                       fill = data.babyColors[data.babyIndex])
+
+    canvas.create_rectangle(data.width - 300, 80, data.width - 100, 100, fill=
+    'white')
+    canvas.create_rectangle(data.width - 300, 80,
+                            data.width - data.progressBaby, 100,
+                            fill=
+                            'green')
+    if data.wonBabyGame == True:
+        canvas.create_text(data.width/2, data.height/2, font = "Arial 40 "
+                                                               "bold",
+                           text = "NICE JOB!")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ###############################################################################
 # PRECUT MODE
 ###############################################################################
 # mousePressed not used
 def precutMousePressed(event, data):
     if leftButtonPressed(event, data):
-        data.mode = 'anesthesia'
+        reinitPatient(data)
+        data.mode = 'patient'
     elif rightButtonPressed(event, data):
         reinitIncisionMode(data)
         data.currImage = 'images/zoomSurgery.gif'
