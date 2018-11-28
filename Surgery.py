@@ -123,6 +123,8 @@ def mousePressed(event, data):
         extractionMousePressed(event, data)
     elif (data.mode == "anesthesia"):
         anesthesiaMousePressed(event, data)
+    elif (data.mode == "end"):
+        endMousePressed(event, data)
 
 
 # This function controls keyPressed for each mode
@@ -139,6 +141,8 @@ def keyPressed(event, data):
         extractionKeyPressed(event, data)
     elif (data.mode == "anesthesia"):
         anesthesiaKeyPressed(event, data)
+    elif (data.mode == "end"):
+        endKeyPressed(event, data)
 
 
 # This function controls timerFired for each mode
@@ -148,12 +152,6 @@ def timerFired(data):
     else:
         data.displayFact = False
         data.seenFact+=1
-    # data.timer+=1
-    # if data.timer%2500 == 0:
-    #     data.displayFact = False
-    # else:
-    #     data.displayFact = True
-    # data.seen+=1
 
 
     if data.mode == "launch":
@@ -168,6 +166,8 @@ def timerFired(data):
         extractionTimerFired(data)
     elif (data.mode == "anesthesia"):
         anesthesiaTimerFired( data)
+    elif (data.mode == "end"):
+        endTimerFired(data)
 
 
 # This function controls redrawAll for each mode
@@ -203,6 +203,8 @@ def redrawAll(canvas, data):
                                                                    "30 bold",
                            text=
                            data.progressText[0])
+    elif (data.mode == "end"):
+        endRedrawAll(canvas,data)
 
     if data.displayFact == False and len(data.medFacts) > 0:
         print(data.seenFact)
@@ -1151,8 +1153,11 @@ def stitchUpdateLeapMotionData(data):
         #If all five stitches completed, user has completed suturing
         if len(data.sutureLines) >= 5:
             data.finishedSuturing = True
+            data.sutureInstruction = "WAY TO GO!"
             data.suturingBackground = 'images/finishedSuturing.gif'
             data.nextStep = False
+        if data.finishedSuturing == True:
+            data.mode = 'end'
 
 
 
@@ -1189,9 +1194,6 @@ def stitchRedrawAll(canvas, data):
     if len(data.sutureLines) <5:
         canvas.create_text(data.width / 2, 100, font="Arial 15 bold", text=
         str(5-len(data.sutureLines)) + " left to go!")
-    if data.finishedSuturing == True:
-        data.sutureInstruction = "WAY TO GO!"
-        pass
 
 
     drawSutureNeedle(canvas,data)
@@ -1249,6 +1251,37 @@ def drawSuturePoints(canvas,data):
                            (data.suturePoints[i])[1] -
                            3, (data.suturePoints[0])[0] +3,
                            (data.suturePoints[i])[1] + 3, fill = 'yellow green')
+
+
+###############################################################################
+                           # END SCREEN MODE
+###############################################################################
+
+def endMousePressed(event, data):
+    pass
+
+
+def endKeyPressed(event, data):
+    if event.keysym == 'p':
+        init(data)
+
+
+def endTimerFired(data):
+    endUpdateLeapMotionData(data)
+
+
+def endUpdateLeapMotionData(data):
+    pass
+def endRedrawAll(canvas,data):
+    end = Image.open('images/doctorlicense.jpg')
+    end1 = end.resize((700, 600), Image.ANTIALIAS)
+    end2 = ImageTk.PhotoImage(end1)
+    canvas.create_image(data.width / 2, data.height / 2, image=end2)
+    label = Label(image=end2)
+    label.image = end2  # keep a reference!
+
+    canvas.create_text(data.width/2, data.height-100, font =
+    "Arial 25 bold", text = "CONGRATULATIONS! Press p to play again")
 
 
 ################################################################################
