@@ -1,9 +1,9 @@
 ###############################################################################
-
-# CITATION: Created using outline of provided starterFile leapMotionDemo.py
-# Uses leapMotion built-in variables/gesture-detection functions from leap
+# CITATION: Created using outline of providedStarterFile leapMotionDemo.py
+# which includes:
+# LeapMotion built-in variables/gesture-detection functions from leap
 # motion library
-# Uses 112 Tkinter Framework, from the CMU 15-112 course
+# 112 Tkinter Framework, from the CMU 15-112 course
 ###############################################################################
 import math
 import os
@@ -18,12 +18,19 @@ from PIL import Image, ImageTk
 
 
 def init(data):
+    data.counting =0
+
     # data.timer = 0
+    data.color = None
+    data.colors = ['pink', 'yellow', 'cyan2', 'wheat1', 'thistle1',
+                   'SteelBlue1', 'salmon', 'seagreen1', 'gold', 'mint cream',
+                   'alice blue', 'indianred1']
     data.seenFact = 0
     #CITATION: medical facts are from online (
     # https://www.disabled-world.com/medical/human-body-facts.php)
     data.medText = 'medFacts.txt'
     data.medFacts = [line for line in open(data.medText)]
+    data.factText = data.medFacts[random.randint(0,len(data.medFacts)-1)]
     data.displayFact = False
     data.progressText = ["STEP 1: ANESTHESIA","STEP 2: INCISION", "STEP 3: "
                                                              "EXTRACT",
@@ -107,6 +114,28 @@ def init(data):
 
     data.nextStep = False
 
+def drawArrows(canvas,data):
+    leftArrow = Image.open('images/leftArrow.gif')
+    leftArrow1 = leftArrow.resize((100,100), Image.ANTIALIAS)
+    leftArrow2 = ImageTk.PhotoImage(leftArrow1)
+    canvas.create_image(100, data.height -70, image=leftArrow2)
+    label = Label(image=leftArrow2)
+    label.image = leftArrow2  # keep a reference!
+
+    rightArrow = Image.open('images/rightArrow.gif')
+    rightArrow1= rightArrow.resize((100,100), Image.ANTIALIAS)
+    rightArrow2 = ImageTk.PhotoImage(rightArrow1)
+    canvas.create_image(data.width-100, data.height - 70, image=rightArrow2)
+    label = Label(image=rightArrow2)
+    label.image = rightArrow2  # keep a reference!
+def leftButtonPressed(event,data):
+    if event.x > 50 and event.x< 150 and event.y >data.height-130 and \
+            event.y<data.height-30:
+        return True
+def rightButtonPressed(event,data):
+    if event.x>data.width-150 and event.x<data.width-50 and \
+            event.y>data.height-130 and event.y<data.height-30:
+        return True
 
 # ****************************************************************
 # Each mode represents one step further into the surgical procedure
@@ -147,11 +176,22 @@ def keyPressed(event, data):
 
 # This function controls timerFired for each mode
 def timerFired(data):
-    if data.timer1%100 == 0:
+    if data.counting%200 == 0:
         data.displayFact = True
     else:
         data.displayFact = False
-        data.seenFact+=1
+
+    if data.counting %30 == 0:
+        data.color = random.choice(data.colors)
+        data.factText = data.medFacts[random.randint(0, len(data.medFacts) - 1)]
+
+    boolCounting = True
+    print('count', data.counting)
+    if data.counting % 30 == 0:
+        boolCounting = False
+    else:
+        boolCounting = True
+    data.displayFact = boolCounting
 
 
     if data.mode == "launch":
@@ -174,14 +214,27 @@ def timerFired(data):
 def redrawAll(canvas, data):
     if data.mode == "launch":
         launchRedrawAll(canvas,data)
+        if data.displayFact == True and len(data.medFacts) > 0:
+            canvas.create_rectangle(0, 20,
+                                    data.width, 60,
+                                    fill=data.color, outline='')
+            canvas.create_text(data.width / 2 -50, 40,anchor = 'c', font= \
+                "Arial 12 bold  "
+                               ,
+                               fill='Black', text="DID YOU KNOW? " + " ".join(
+                    data.factText.split()))
+
     elif (data.mode == "precut"):
         precutRedrawAll(canvas, data)
+
+
     elif (data.mode == "cut"):
         cutRedrawAll(canvas, data)
         canvas.create_text(data.width / 2, data.height - 75, font="Arial "
                                                                    "30 bold",
                            text=
                            data.progressText[1])
+
 
     elif (data.mode == "stitch"):
         stitchRedrawAll(canvas, data)
@@ -197,25 +250,17 @@ def redrawAll(canvas, data):
                                                                      text=
         data.progressText[2])
 
+
+
     elif (data.mode == "anesthesia"):
         anesthesiaRedrawAll(canvas, data)
         canvas.create_text(data.width / 2, data.height - 75, font="Arial "
                                                                    "30 bold",
                            text=
                            data.progressText[0])
+
     elif (data.mode == "end"):
         endRedrawAll(canvas,data)
-
-    if data.displayFact == False and len(data.medFacts) > 0:
-        print(data.seenFact)
-        if data.seenFact %20 == 0:
-            canvas.create_rectangle(data.width/7.5 - 100, data.height -50 - 50,
-                                    data.width/7.5 + 100, data.height- 50 + 50,
-                                    fill = 'gold', outline = '')
-            canvas.create_text(data.width/7.5, data.height - 50, font = "Arial 10 "
-                                                                       ,
-                               fill = 'Black', text =str(data.medFacts.pop(0)))
-
 
 
 ###############################################################################
@@ -241,6 +286,7 @@ def launchKeyPressed(event, data):
 
 #Every time timer fired is called, update Leapmotion data
 def launchTimerFired(data):
+    data.counting+=1
     launchUpdateLeapMotionData(data)
     launchPrintLeapMotionData(data)
 
@@ -319,7 +365,12 @@ def drawSurgeryButton(canvas,data):
 ###############################################################################
 # mousePressed not used
 def precutMousePressed(event, data):
-    pass
+    if leftButtonPressed(event,data):
+        data.mode = 'anesthesia'
+    elif rightButtonPressed(event,data):
+        reinitIncisionMode(data)
+        data.currImage = 'images/zoomSurgery.gif'
+        data.mode = 'cut'
 
 
 #keyPressed not used
@@ -328,6 +379,7 @@ def precutKeyPressed(event, data):
 
 
 def precutTimerFired(data):
+
     precutUpdateLeapMotionData(data)
     precutPrintLeapMotionData(data)
 
@@ -395,7 +447,7 @@ def precutRedrawAll(canvas, data):
     canvas.create_image(data.width / 2, data.height / 2, image=bgIm2)
     label = Label(image=bgIm2)
     label.image = bgIm2  # keep a reference!
-
+    drawArrows(canvas, data)
 
     canvas.create_text(data.width - 200, data.height / 2 - 250,
                        font="Arial 25 bold", text="BEGIN SURGERY")
@@ -411,7 +463,12 @@ def precutRedrawAll(canvas, data):
 ################################################################################
 # mousePressed not used
 def extractionMousePressed(event, data):
-    pass
+    if leftButtonPressed(event,data):
+        reinitIncisionMode(data)
+        data.currImage = 'images/zoomSurgery.gif'
+        data.mode = 'cut'
+    elif rightButtonPressed(event,data):
+        data.mode = 'stitch'
 
 # keyPressed not used
 def extractionKeyPressed(event, data):
@@ -419,6 +476,7 @@ def extractionKeyPressed(event, data):
 
 #Every time timerFired called, update data
 def extractionTimerFired(data):
+    data.counting+=1
     extractionUpdateLeapMotionData(data)
     extractionPrintLeapMotionData(data)
     doExtract(data)
@@ -639,7 +697,7 @@ def extractionRedrawAll(canvas, data):
 
     canvas.create_text(data.width/2, 50, font = "Arial 15 bold", text = \
         data.surgInstruction)
-
+    drawArrows(canvas, data)
     #If objects have been placed, draw each object in list of objects to be
     # extracted
     for j in range(len(data.object)):
@@ -685,7 +743,11 @@ def drawForceps(canvas,data):
 ############################################################################
 # mousePressed not used
 def anesthesiaMousePressed(event, data):
-    pass
+    if leftButtonPressed(event,data):
+        data.mode = 'launch'
+    elif rightButtonPressed(event,data):
+        data.currImage = 'images/surgeryPatient.gif'
+        data.mode = 'precut'
 
 # keyPressed not used
 def anesthesiaKeyPressed(event, data):
@@ -694,6 +756,7 @@ def anesthesiaKeyPressed(event, data):
 
 # Each time timerFired is called, update data
 def anesthesiaTimerFired(data):
+    data.counting+=1
     anesthesiaUpdateLeapMotionData(data)
     anesthesiaPrintLeapMotionData(data)
     checkCollisionSyringeBottle(data)
@@ -841,8 +904,7 @@ def anesthesiaRedrawAll(canvas, data):
                            font = 'Arial 15 bold',
                            text = data.anesthesiaInstruction)
 
-
-
+    drawArrows(canvas, data)
     drawBottle(canvas,data)
     drawSyringe(canvas, data)
     drawHand(canvas, data)
@@ -853,6 +915,7 @@ def anesthesiaRedrawAll(canvas, data):
                                                                "bold",
                            fill = 'navy', text = 'Succesfully filled '
                                                          'syringe!')
+
 
 #Draw hand image
 def drawHand(canvas,data):
@@ -880,7 +943,11 @@ def drawSyringe(canvas,data):
 ##############################################################################
 
 def cutMousePressed(event, data):
-    pass
+    if leftButtonPressed(event,data):
+        data.currImage = 'images/surgeryPatient.gif'
+        data.mode = 'precut'
+    elif rightButtonPressed(event,data):
+        data.mode = 'extract'
 
 
 def cutKeyPressed(event, data):
@@ -890,6 +957,7 @@ def cutKeyPressed(event, data):
 # Keep track of number of seconds left to make incision, because lagging too
 # long will cause harm to the patient
 def cutTimerFired(data):
+    data.counting+=1
     data.timer1 += 1
     cutUpdateLeapMotionData(data)
     cutPrintLeapMotionData(data)
@@ -1021,6 +1089,7 @@ def drawBackground(canvas,data):
 
 def cutRedrawAll(canvas, data):
     drawBackground(canvas,data)
+    drawArrows(canvas, data)
 
     # Draw out dotted line to use as reference for incision
     # User starts to make incision
@@ -1044,6 +1113,7 @@ def cutRedrawAll(canvas, data):
 
     # Draw scissors tool
     drawScissors(canvas,data)
+
 def drawLine(canvas,data):
     if data.canDraw == True:
         for elem in data.lineLst:
@@ -1080,7 +1150,10 @@ def drawScissors(canvas,data):
 
 
 def stitchMousePressed(event, data):
-    pass
+    if leftButtonPressed(event,data):
+        data.mode = 'extract'
+    elif rightButtonPressed(event,data):
+        data.mode = 'end'
 
 
 def stitchKeyPressed(event, data):
@@ -1088,6 +1161,7 @@ def stitchKeyPressed(event, data):
 
 
 def stitchTimerFired(data):
+    data.counting+=1
     stitchUpdateLeapMotionData(data)
 
 
@@ -1187,6 +1261,7 @@ def stitchRedrawAll(canvas, data):
     label = Label(image=bgIm2)
     label.image = bgIm2  # keep a reference!
 
+    drawArrows(canvas, data)
     canvas.create_text(data.width/2, 50, font = "Arial 25 bold", text =
                                                 data.sutureInstruction)
 
@@ -1267,6 +1342,7 @@ def endKeyPressed(event, data):
 
 
 def endTimerFired(data):
+    data.counting+=1
     endUpdateLeapMotionData(data)
 
 
