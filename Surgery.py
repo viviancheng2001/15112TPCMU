@@ -4,6 +4,8 @@
 # LeapMotion built-in variables/gesture-detection functions from leap
 # motion library
 # 112 Tkinter Framework, from the CMU 15-112 course
+
+#Implements functions from leapMotion database to obtain hand data
 ###############################################################################
 import math
 import os
@@ -19,40 +21,6 @@ from PIL import Image, ImageTk
 
 
 def init(data):
-    data.progressBaby = 300
-    data.babyMoods = ["HAPPY", "CONFUSED", "SCARED", "SAD", "FURIOUS!"]
-    data.babyColors = ["lime green", "gold", 'orange', 'coral1', 'red']
-    data.wonBabyGame = False
-    data.babyMood = 0
-    data.babySyringe = [data.width/2, data.height/2]
-    data.babySpeed = 0
-    data.babyIndex = 0
-    data.babySize = [150,200]
-    data.babyImage = ['images/baby.gif', 'images/baby2.gif',
-                      'images/baby3.gif','images/baby4.gif',
-                      'images/babyCry.gif']
-    data.babyCoord = [data.width / 2, data.height/1.5]
-    data.syringeLocation = [data.babyCoord[0] + 60, data.babyCoord[1] + 15]
-    data.candies = [[data.width/5 - 90,50],[data.width/5+10,50],
-                    [data.width/5+120,50]]
-    # Launch Screen medical facts
-
-    data.pitch = 0
-    data.counting = 0
-    data.color = None
-    data.colors = ['pink', 'yellow', 'cyan2', 'wheat1', 'thistle1',
-                   'SteelBlue1', 'salmon', 'seagreen1', 'gold', 'mint cream',
-                   'alice blue', 'indianred1']
-    data.seenFact = 0
-    # CITATION: medical facts are from online (
-    # https://www.disabled-world.com/medical/human-body-facts.php)
-    data.medText = 'medFacts.txt'
-    data.medFacts = [line for line in open(data.medText) if len(line) < 100]
-    data.factText = data.medFacts[random.randint(0, len(data.medFacts) - 1)]
-    data.displayFact = False
-    data.progressText = ["STEP 1: ANESTHESIA", "STEP 2: INCISION", "STEP 3: "
-                                                                   "EXTRACT",
-                         "STEP 4: STITCH"]
     # Initialize mode and controller
     data.mode = "launch"  # current mode
     data.controller = Leap.Controller()
@@ -75,6 +43,42 @@ def init(data):
     data.seconds = 10
     data.isGrabbing = False
     data.currImage = 'images/surgeryPatient.gif'
+
+    ######Surgery: Patient########
+    data.progressBaby = 300
+    data.babyMoods = ["HAPPY", "CONFUSED", "SCARED", "SAD", "FURIOUS!"]
+    data.babyColors = ["lime green", "gold", 'orange', 'coral1', 'red']
+    data.wonBabyGame = False
+    data.babyMood = 0
+    data.babySyringe = [data.width / 2, data.height / 2]
+    data.babySpeed = 0
+    data.babyIndex = 0
+    data.babySize = [150, 200]
+    data.babyImage = ['images/baby.gif', 'images/baby2.gif',
+                      'images/baby3.gif', 'images/baby4.gif',
+                      'images/babyCry.gif']
+    data.babyCoord = [data.width / 2, data.height / 1.5]
+    data.syringeLocation = [data.babyCoord[0] + 60, data.babyCoord[1] + 15]
+    data.candies = [[data.width / 5 - 90, 50], [data.width / 5 + 10, 50],
+                    [data.width / 5 + 120, 50]]
+    # Launch Screen medical facts
+
+    data.pitch = 0
+    data.counting = 0
+    data.color = None
+    data.colors = ['pink', 'yellow', 'cyan2', 'wheat1', 'thistle1',
+                   'SteelBlue1', 'salmon', 'seagreen1', 'gold', 'mint cream',
+                   'alice blue', 'indianred1']
+    data.seenFact = 0
+    # CITATION: medical facts are from online (
+    # https://www.disabled-world.com/medical/human-body-facts.php)
+    data.medText = 'medFacts.txt'
+    data.medFacts = [line for line in open(data.medText) if len(line) < 100]
+    data.factText = data.medFacts[random.randint(0, len(data.medFacts) - 1)]
+    data.displayFact = False
+    data.progressText = ["STEP 1: ANESTHESIA", "STEP 2: INCISION", "STEP 3: "
+                                                                   "EXTRACT",
+                         "STEP 4: STITCH"]
 
     ######Surgery: Precut#######
     data.preCutText = "Zoom in to begin"
@@ -141,7 +145,8 @@ def init(data):
     data.nextStep = False
 
 
-# Go to next step or go back a step
+######Back/Next arrows allows users to go to next step or go back a step#####
+
 def drawArrows(canvas, data):
     leftArrow = Image.open('images/leftArrow.gif')
     leftArrow1 = leftArrow.resize((100, 100), Image.ANTIALIAS)
@@ -184,7 +189,7 @@ def mousePressed(event, data):
     elif (data.mode == "extract"):
         extractionMousePressed(event, data)
     elif (data.mode == 'patient'):
-        patientMousePressed(event,data)
+        patientMousePressed(event, data)
     elif (data.mode == "anesthesia"):
         anesthesiaMousePressed(event, data)
     elif (data.mode == "end"):
@@ -253,51 +258,38 @@ def redrawAll(canvas, data):
         launchRedrawAll(canvas, data)
         if data.displayFact == True and len(data.medFacts) > 0 and len(
                 data.factText) < 100:
-            canvas.create_rectangle(0, 20,
-                                    data.width, 60,
-                                    fill=data.color, outline='')
+            canvas.create_rectangle(0, 20, data.width, 60, fill=data.color,
+                                    outline='')
             canvas.create_text(data.width / 2 - 10, 40, anchor='c', font= \
                 "Arial 12 bold  "
                                ,
                                fill='Black', text="DID YOU KNOW? " + " ".join(
                     data.factText.split()))
-
     elif (data.mode == "precut"):
         precutRedrawAll(canvas, data)
-
-
     elif (data.mode == "cut"):
         cutRedrawAll(canvas, data)
         canvas.create_text(data.width / 2, data.height - 75, font="Arial "
                                                                   "30 bold",
-                           text=
-                           data.progressText[1])
-
-
+                           text= data.progressText[1])
     elif (data.mode == "stitch"):
         stitchRedrawAll(canvas, data)
         canvas.create_text(data.width / 2, data.height - 75, font="Arial "
                                                                   "30 bold",
-                           text=
-                           data.progressText[3])
-
+                           text= data.progressText[3])
     elif (data.mode == "extract"):
         extractionRedrawAll(canvas, data)
         canvas.create_text(data.width / 2, data.height - 75, font="Arial "
                                                                   "30 bold",
-                           text=
-                           data.progressText[2])
-
+                           text= data.progressText[2])
     elif (data.mode == 'patient'):
-        patientRedrawAll(canvas,data)
+        patientRedrawAll(canvas, data)
 
     elif (data.mode == "anesthesia"):
         anesthesiaRedrawAll(canvas, data)
         canvas.create_text(data.width / 2, data.height - 75, font="Arial "
                                                                   "30 bold",
-                           text=
-                           data.progressText[0])
-
+                           text= data.progressText[0])
     elif (data.mode == "end"):
         endRedrawAll(canvas, data)
 
@@ -390,7 +382,7 @@ def drawDentalButton(canvas, data):
                        'black', text="DENTIST")
 
 
-# Draw Surgery  button
+# Draw Surgery button
 def drawSurgeryButton(canvas, data):
     round_rectangle(canvas, data.width / 2 + 50, data.height / 2 + 50,
                     data.width / 2 + 175,
@@ -400,8 +392,6 @@ def drawSurgeryButton(canvas, data):
     canvas.create_text(data.width / 2 + 110, data.height / 2 + 75, font=
     "Arial 20  bold", fill=
                        'white', text="SURGEON")
-
-
 
 
 ############################################################################
@@ -414,9 +404,6 @@ def anesthesiaMousePressed(event, data):
     elif rightButtonPressed(event, data):
         reinitPatient(data)
         data.mode = 'patient'
-        # data.currImage = 'images/surgeryPatient.gif'
-        # data.mode = 'precut'
-
 
 # keyPressed not used
 def anesthesiaKeyPressed(event, data):
@@ -479,8 +466,6 @@ def anesthesiaUpdateLeapMotionData(data):
                         data.successSyringe = True
                         reinitPatient(data)
                         data.mode = 'patient'
-                        # data.currImage = 'images/surgeryPatient.gif'
-                        # data.mode = "precut"
 
 
 # Check if hand touching syringe
@@ -612,15 +597,11 @@ def drawSyringe(canvas, data):
     label.image = syr3  # keep a reference!
 
 
-
-
-
-
-
 ###############################################################################
 # PATIENT MODE
 ###############################################################################
 
+#Reinitialize all variables when return to the patient mode
 def reinitPatient(data):
     data.progressBaby = 300
     data.babyMoods = ["HAPPY", "CONFUSED", "SCARED", "SAD", "FURIOUS!"]
@@ -638,6 +619,8 @@ def reinitPatient(data):
     data.syringeLocation = [data.babyCoord[0] + 60, data.babyCoord[1] + 15]
     data.candies = [[data.width / 5 - 90, 50], [data.width / 5 + 10, 50],
                     [data.width / 5 + 120, 50]]
+
+#Jumping to next step/previous step
 def patientMousePressed(event, data):
     if leftButtonPressed(event, data):
         data.mode = 'anesthesia'
@@ -654,8 +637,9 @@ def patientKeyPressed(event, data):
 def patientTimerFired(data):
     if not data.wonBabyGame == True:
         data.counting += 1
-        data.babyMood +=1
-        print(data.babyMood)
+        #this counter keeps track of baby's mood level , which increases (
+        # gets more upset) with time)
+        data.babyMood += 1
         patientUpdateLeapMotionData(data)
         patientPrintLeapMotionData(data)
 
@@ -670,11 +654,9 @@ def patientUpdateLeapMotionData(data):
     app_height = 600
     # CITATION: Create 2D interaction box from leapMotion library
     if right_pointable.is_valid:
-        iBox = data.frame.interaction_box  # create 2D interaction box with
+        iBox = data.frame.interaction_box
         leapPointR = right_pointable.stabilized_tip_position
         normalizedPointR = iBox.normalize_point(leapPointR, True)
-
-
 
         app_xR = normalizedPointR.x * app_width  # x coord of RH finger
         app_yR = (1 - normalizedPointR.y) * app_height  # y coord of RH finger
@@ -682,72 +664,89 @@ def patientUpdateLeapMotionData(data):
         # Make right hand image, left hand image follow user's hands
         data.babySyringe[0], data.babySyringe[1] = app_xR, app_yR
 
+
+    #AI Chase and Evade concept: the baby will run away from the syringe at
+    # different speeds based on the palm velocity detected as well as the
+    # baby's mood.
     if rightHand.is_valid:
-        handVelX= rightHand.palm_velocity[0]
-        print(handVelX)
-        # handVelY=rightHand.palm_velocity[1]
-        data.babySpeed = handVelX * (data.babyIndex+1/2)
+        handVelX = rightHand.palm_velocity[0]
+        data.babySpeed = handVelX * (data.babyIndex + 1 / 2)
         data.babyCoord[0] += data.babySpeed
         data.syringeLocation[0] = data.babyCoord[0] + 60
         data.syringeLocation[1] = data.babyCoord[1] + 15
 
+    #Candy can revert the baby back by one mood level, which gives the user
+    # more time to complete the task. However there are only three candies to
+    #  use!
     for c in data.candies:
         if data.babySyringe[0] > c[0] - 50 and data.babySyringe[0] < c[0] + 50 \
                 and \
                 data.babySyringe[
-            1] > 0 \
+                    1] > 0 \
                 and data.babySyringe[1] < 100:
+            #Use a candy
             data.candies.remove(c)
+            #Baby gets happier!
             if data.babyIndex > 0:
-                data.babyIndex -=1
+                data.babyIndex -= 1
+    #Works with timerFired to increase baby's mood level with time
     if data.babyMood % 50 == 0 and data.babyIndex < 4:
-        data.babyIndex +=1
+        data.babyIndex += 1
 
+    #Progress bar to keep track of vaccination
     if checkInjecting(data) == True:
-        print("INJECtING")
-        data.progressBaby -= 19
-        data.countInject +=1
-        if data.countInject ==10:
+        data.progressBaby -= 20
+        data.countInject += 1
+        if data.countInject == 10:
             data.progressBaby = 100
             data.wonBabyGame = True
     else:
+        #Progress bar resets if stop injection
         data.countInject = 0
         data.progressBaby = 300
 
 
-
 def checkInjecting(data):
+    #Check if syringe is colliding with where on baby's body should be
+    # vaccinated
     return data.babySyringe[0] - 110 > data.syringeLocation[0] - 8 and \
-           data.babySyringe[0] -110< data.syringeLocation[0] + 8 and \
-           data.babySyringe[1] + 90 < data.syringeLocation[1] + 8and \
-           data.babySyringe[1] + 90 >data.syringeLocation[1] -8
+           data.babySyringe[0] - 110 < data.syringeLocation[0] + 8 and \
+           data.babySyringe[1] + 90 < data.syringeLocation[1] + 8 and \
+           data.babySyringe[1] + 90 > data.syringeLocation[1] - 8
+
 
 def patientPrintLeapMotionData(data):
     pass
 
-def patientRedrawAll(canvas,data):
+
+def patientRedrawAll(canvas, data):
+    #Citation: standard way to create image in python 2.7 with Tkinter
     bg = Image.open('images/babyOffice.jpg')
-    bg1 = bg.resize((700,600), Image.ANTIALIAS)
+    bg1 = bg.resize((700, 600), Image.ANTIALIAS)
     bg2 = ImageTk.PhotoImage(bg1)
-    canvas.create_image(data.width/2,data.height/2, image=bg2)
+    canvas.create_image(data.width / 2, data.height / 2, image=bg2)
     label = Label(image=bg2)
     label.image = bg2  # keep a reference!
 
+    #Forward/next arrow
     drawArrows(canvas, data)
 
+    #Draw baby
     baby = Image.open(data.babyImage[data.babyIndex])
-    baby1 = baby.resize((300,400), Image.ANTIALIAS)
+    baby1 = baby.resize((300, 400), Image.ANTIALIAS)
     baby2 = ImageTk.PhotoImage(baby1)
     canvas.create_image(data.babyCoord[0], data.babyCoord[1], image=baby2)
     label = Label(image=baby2)
     label.image = baby2  # keep a reference!
 
+    #Draw the location on the baby that should be vaccinated
     canvas.create_oval(data.syringeLocation[0] - 10, data.syringeLocation[1]
                        - 10, data.syringeLocation[0] + 10,
                        data.syringeLocation[1]
                        + 10,
                        fill='green')
 
+    #Draw syringe
     s = Image.open('images/babySyringe.gif')
     s1 = s.resize((300, 250), Image.ANTIALIAS)
     s2 = ImageTk.PhotoImage(s1)
@@ -755,24 +754,26 @@ def patientRedrawAll(canvas,data):
     label = Label(image=s2)
     label.image = s2  # keep a reference!
 
+    #Draw candies
     for i in data.candies:
         c = Image.open('images/candies.gif')
-        c1 = c.resize((100,100), Image.ANTIALIAS)
+        c1 = c.resize((100, 100), Image.ANTIALIAS)
         c2 = ImageTk.PhotoImage(c1)
         canvas.create_image(i[0], i[1], image=c2)
         label = Label(image=c2)
         label.image = c2  # keep a reference!
 
-    canvas.create_text(data.width/2, data.height-70, font = "Arial 20 bold",
-                       fill =
-    'black',text ="Give the baby anesthesia before he runs away! \n Point "
-                  "syringe tip to green dot")
+    canvas.create_text(data.width / 2, data.height - 70, font="Arial 20 bold",
+                       fill=
+                       'black',
+                       text="Vaccinate the baby before he runs away! \n Point "
+                            "syringe tip to green dot")
 
-    canvas.create_text(data.width-170, 50,font = "Arial 27 bold", text =
+    canvas.create_text(data.width - 170, 50, font="Arial 27 bold", text=
     "Baby's mood: " +
-                                                  data.babyMoods[
-                                                      data.babyIndex],
-                       fill = data.babyColors[data.babyIndex])
+    data.babyMoods[
+        data.babyIndex],
+                       fill=data.babyColors[data.babyIndex])
 
     canvas.create_rectangle(data.width - 300, 80, data.width - 100, 100, fill=
     'white')
@@ -780,24 +781,11 @@ def patientRedrawAll(canvas,data):
                             data.width - data.progressBaby, 100,
                             fill=
                             'green')
+    #Succesfully vaccinated baby
     if data.wonBabyGame == True:
-        canvas.create_text(data.width/2, data.height/2, font = "Arial 40 "
-                                                               "bold",
-                           text = "NICE JOB!")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        canvas.create_text(data.width / 2, data.height / 2, font="Arial 40 "
+                                                                 "bold",
+                           text="NICE JOB!")
 
 
 ###############################################################################
@@ -1078,8 +1066,8 @@ def drawLine(canvas, data):
             # and must retry
             print("Drawing line at: ", elem[0], elem[1], elem[2], elem[3])
             print (
-            "Bounds:", data.dottedLine[0] - 100, data.dottedLine[2] + 100,
-            data.dottedLine[2] - 100, data.dottedLine[3] + 100)
+                "Bounds:", data.dottedLine[0] - 100, data.dottedLine[2] + 100,
+                data.dottedLine[2] - 100, data.dottedLine[3] + 100)
 
             if elem[0] < data.dottedLine[0] - 50 or elem[2] > data.dottedLine[
                 2] \
@@ -1103,6 +1091,42 @@ def drawScissors(canvas, data):
 ################################################################################
 # EXTRACTION MODE
 ################################################################################
+
+# Reinitialize variables associated with extraction mode to restart
+def reinitExtraction(data):
+    #######Surgery: Extraction########
+    data.object2Placed = False
+    data.fX1, data.fY1 = 0, 0
+    data.fX2, data.fY2 = 0, 0
+    data.forcepsCollided = False
+    data.degrees = 0
+    data.app_xR, data.app_yR = 0, 0
+    data.seen = 0
+    data.forcepsX = data.width / 2 + 200
+    data.forcepsY = data.height / 2
+    data.objectPlaced = False
+    data.size = None
+    data.objectBool = False
+    data.object2Bool = False
+    data.seen2 = 0
+    data.object = [[None, None] for i in range(random.randint(1, 5))]
+    data.object2 = [[None, None] for j in range(random.randint(1, 5))]
+    data.surgSquarePoints = [[data.width / 2 - 200, data.height / 2 - 175],
+                             [data.width / 2 - 200, data.height / 2 + 175],
+                             [data.width / 2 + 200, data.height / 2 + 175],
+                             [data.width / 2 + 200, data.height / 2 - 175]]
+    data.leftCut, data.rightCut = 4, 4
+    data.surg = [data.width / 2 - data.leftCut, data.height / 2 - 150,
+                 data.width / 2 + data.rightCut,
+                 data.height / 2 + 150]
+
+    data.surgRH = [data.width / 2 + 200, data.height / 2]
+    data.surgLH = [data.width / 2 - 200, data.height / 2]
+    data.surgInstruction = "Rotate hands outwards to open up wound."
+    data.size2Y1 = 1
+    data.size2Y2 = 1
+    data.size2X = 1
+
 # mousePressed not used
 def extractionMousePressed(event, data):
     if leftButtonPressed(event, data):
@@ -1195,12 +1219,13 @@ def doExtract(data):
                 data.pitch = math.degrees(hand.direction.pitch)
                 print('pitch deg:', data.pitch)
                 if abs(data.pitch) > 30:
-                    if data.pitch < 0:# forwards, top of square's width
+                    if data.pitch < 0:  # forwards, top of square's width
                         # increases
                         # Tweak polygon (viewing plane) dimensions accordingly for each
                         # degree change in pitch
                         for i in range(int(abs(data.pitch))):
-                            # Keep polygon in bounds
+                            # Keep polygon in bounds,make it
+                            # look 3D
                             if data.surgSquarePoints[0][
                                 0] < data.width / 2 - 100 and \
                                     data.surgSquarePoints[3][
@@ -1215,33 +1240,19 @@ def doExtract(data):
                                         data.surgSquarePoints[3][0] -= 0.01
                                         data.surgSquarePoints[1][0] -= 0.01
                                         data.surgSquarePoints[2][0] += 0.01
+
+                                # Lengthen/shorten object to be extracted
                                 for obj in data.object2:
-                                    # if obj[1] + data.size2Y2  -0.005 > \
-                                    #         data.surgSquarePoints[
-                                    #     3][1] and obj[0] - data.size2X > \
-                                    #         data.surgSquarePoints[0][0] and obj[0] + \
-                                    #         data.size2X < data.surgSquarePoints[3][0]:
-                                    #     data.size2Y1+=0.01
-                                    #     data.size2Y2 -= 0.005
                                     if obj[1] - data.size2Y1 > \
                                             data.surgSquarePoints[3][1]:
-                                        # obj[1] -=0.01
                                         data.size2Y1 += 0.005
-                                    else:
-                                        print('pooo')
-                                        # data.size2Y2 -=0.007
-                                        # data.size2Y2 -= 0.005
-                                        # data.size2Y1 +=0.01
-                                        # data.size2Y2 -=0.005
-                                        print('ycoord', obj[1])
 
-                                    # [data.width / 2 - 200, data.height / 2 - 175],
-                                    # [data.width / 2 - 200, data.height / 2 + 175],
-                                    # [data.width / 2 + 200, data.height / 2 + 175],
-                                    # [data.width / 2 + 200, data.height / 2 - 175]]
-                                    if data.surg[1] > data.surgSquarePoints[3][1]:
+                                    # Lengthen/shorten the wound to adjust to
+                                    # 3D plane
+                                    if data.surg[1] > data.surgSquarePoints[3][
+                                        1]:
                                         data.surg[1] -= 0.0025
-                    else:  # backwards, top of square's width decreases
+                    else:  #rotate backwards
                         # Tweak polygon (viewing plane) dimensions accordingly for
                         # each degree change in pitch
                         for i in range(int(abs(data.pitch))):
@@ -1260,15 +1271,14 @@ def doExtract(data):
                                         (data.surgSquarePoints[2])[0] -= 0.01
                                         data.surgSquarePoints[0][0] -= 0.01
                                         data.surgSquarePoints[3][0] += 0.01
+                                # Lengthen/shorten object to be extracted
                                 for obj1 in data.object2:
                                     if obj1[1] + data.size2Y1 < \
                                             data.surgSquarePoints[1][1]:
-                                        # obj1[1] +=0.01
                                         data.size2Y1 -= 0.005
-                                        # data.size2Y1 +=0.007
-                                    else:
-                                        print('o poo')
 
+                                    #Lengthen/shorten the wound to adjust to
+                                    # 3D plane
                                     if data.surg[1] < data.surgSquarePoints[1][
                                         1]:
                                         data.surg[1] += 0.005
@@ -1304,6 +1314,7 @@ def doExtract(data):
             moveForceps(data)
             # Check if forceps are grabbing each object. If yes, the objects are
             # extracted
+            #Object 1: stones that are embedded in the wound must be removed
             for i in data.object:
                 if checkCollisionForceps(data, i) == True:
                     print("COLLISION")
@@ -1311,13 +1322,13 @@ def doExtract(data):
                         data.object.remove(i)
                 else:
                     pass
+
+            #Object 2: Cacti needles that have pricked skin that must be
+            # removed!
             for j in data.object2:
                 if checkCollisionForceps(data, j) == True:
-                    print("cacti")
                     if len(data.object2) > 0 and j in data.object2:
                         data.object2.remove(j)
-        if data.object2Placed == True:
-            pass
 
         # If all objects extracted, the user has completed the mode successfully.
         if len(data.object) == 0 and len(data.object2) == 0:
@@ -1360,7 +1371,7 @@ def placeObject(data):
                                            int(data.surg[2]
                                                - 25))
 
-
+#Place object 2 (cacti needles) into random x,y locations on the skin.
 def placeObject2(data):
     for j in range(len(data.object2)):
         data.object2[j][1] = random.randint(int(data.height / 2 - 175),
@@ -1368,9 +1379,41 @@ def placeObject2(data):
         data.object2[j][0] = random.randint(int(data.width / 2 - 150),
                                             int(data.width / 2 + 150))
 
+# User must manipulate angle between thumb/index to close the forceps around
+# the object.
+def checkCollisionForceps(data, i):
+    calcYaw(data)
+    return i[0] > data.forcepsX + (150 * math.cos(-1 * math.pi)) / 2 - 20 and i[
+        0] \
+           < \
+           data.forcepsX + (150 * math.cos(-1 * math.pi)) / 2 + 20 and i[1] - \
+           data.size >= (
+                   data.forcepsY + data.fY2) / 2 + 5 and i[1] - data.size <= (
+                   data.forcepsY \
+                   + data.fY2) / 2 + 10
+
+
+#Look at yaw of hand: rotation around the y-axis
+def calcYaw(data):
+    frame = data.controller.frame()
+
+    for hand in frame.hands:
+        # Check hand validity in current frame
+        if hand.is_valid:
+            # In order to prepare for extraction, the user must simulate
+            # opening up the wound by rotating their hands outwards.
+            fingers = hand.fingers
+            # detect if number of extended fingers is 2
+            index = fingers.finger_type(1)[0]
+            dirIndexFinger = index.direction
+            data.yaw = dirIndexFinger.yaw
+            # For right hand, rotate hand outwards to right
+            print(math.degrees(data.yaw))
+
 
 def extractionPrintLeapMotionData(data):
     pass
+
 
 
 # Draw right/left hands
@@ -1442,66 +1485,20 @@ def extractionRedrawAll(canvas, data):
             data.object) + len(data.object2)) + ' objects left '
                                                 'to ' \
                                                 'remove')
-    canvas.create_text(data.width/2, 500, text = "Rotating plane around "
-                                                     "x-axis "
-                                                     "by " +
-                           str((int(data.pitch))) +
-                           ' degrees')
+    canvas.create_text(data.width / 2, 500, text="Rotating plane around "
+                                                 "x-axis "
+                                                 "by " +
+                                                 str((int(data.pitch))) +
+                                                 ' degrees')
 
 
-# User must manipulate angle between thumb/index to close the forceps around
-# the object.
-def checkCollisionForceps(data, i):
-    calcYaw(data)
-    # return i[0] - data.size < data.forcepsX and i[0] + \
-    #        data.size\
-    #        > data.forcepsX \
-    #        - 150 and i[1] + data.size == data.forcepsY and \
-    #        i[1] - data.size == (
-    #     data.forcepsY + data.fY2)/2
-    #
-    # if i[0] > data.forcepsX + (150 * math.cos(-1 * math.pi))/2 - 20and i[0] < \
-    #         data.forcepsX + (150 * math.cos(-1 * math.pi))/2 + 20:
-    #     print("x correct")
-    # if   i[1] - \
-    #     data.size >= (
-    #         data.forcepsY + data.fY2)/2 - 50 and i[1] - data.size <= (
-    #         data.forcepsY\
-    #         + data.fY2)/2 + 50:
-    #     print('y correct')
+# Draw two rotatable lines that depends on
+# the angle between the user's thumb and index fingers, as well as the
+# overall rotation of the hand around y-axis (yaw).
 
-    return i[0] > data.forcepsX + (150 * math.cos(-1 * math.pi)) / 2 - 20 and i[
-        0] \
-           < \
-           data.forcepsX + (150 * math.cos(-1 * math.pi)) / 2 + 20 and i[1] - \
-           data.size >= (
-                   data.forcepsY + data.fY2) / 2 + 5 and i[1] - data.size <= (
-                   data.forcepsY \
-                   + data.fY2) / 2 + 10
-
-
-def calcYaw(data):
-    frame = data.controller.frame()
-
-    for hand in frame.hands:
-        # Check hand validity in current frame
-        if hand.is_valid:
-            # In order to prepare for extraction, the user must simulate
-            # opening up the wound by rotating their hands outwards.
-            fingers = hand.fingers
-            # detect if number of extended fingers is 2
-            index = fingers.finger_type(1)[0]
-            dirIndexFinger = index.direction
-            data.yaw = dirIndexFinger.yaw
-            # For right hand, rotate hand outwards to right
-            print(math.degrees(data.yaw))
-
-
-# Draw a permanently-horizontal line, then a rotatable line that depends on
-# the angle between the user's thumb and index fingers to create a pair of
-# moveable forceps.
+#The forceps mirror the position/angle of these two fingers on the screen.
 def drawForceps(canvas, data):
-    shift = data.yaw
+    shift = data.yaw #real-time rotation about the y-axis.
     r = 150
     angle1 = -1 * math.pi - shift
     data.fX1 = data.forcepsX + r * math.cos(-1 * math.pi)
@@ -1509,20 +1506,8 @@ def drawForceps(canvas, data):
     canvas.create_line(data.fX1, data.fY1, data.forcepsX, data.forcepsY,
                        fill="seashell3",
                        width=10)
-    #
-    #     canvas.create_oval(data.forcepsX,data.forcepsY,data.fX2,
-    # data.fY2, fill = 'pink')
 
-    # canvas.create_oval(data.forcepsX - 5, data.forcepsY - 5, data.forcepsX+5,
-    #                    data.forcepsY+5, fill = 'purple')
-    #
-    # canvas.create_oval(data.forcepsX +(150 * math.cos(-1 * math.pi))/2- 5, \
-    #                                  (data.forcepsY + data.fY2)/2 -5,
-    #                    data.forcepsX+(150 * math.cos(-1 * math.pi))/2+5,
-    #                    (data.forcepsY + data.fY2)/2 +5,
-    #                    fill = 'green')
-    print('degreesbetweenFingers', data.degrees)
-    print('indexshift', math.degrees(shift))
+
     angle2 = math.radians(data.degrees + 10 + math.degrees(shift))  # buffer
     data.fX2 = data.forcepsX - r * math.cos(angle2)
     data.fY2 = data.forcepsY - r * math.sin(angle2)
@@ -1530,40 +1515,6 @@ def drawForceps(canvas, data):
                        fill="seashell3", width=12)
 
 
-# Reinitialize variables associated with extraction mode to restart
-def reinitExtraction(data):
-    #######Surgery: Extraction########
-    data.object2Placed = False
-    data.fX1, data.fY1 = 0, 0
-    data.fX2, data.fY2 = 0, 0
-    data.forcepsCollided = False
-    data.degrees = 0
-    data.app_xR, data.app_yR = 0, 0
-    data.seen = 0
-    data.forcepsX = data.width / 2 + 200
-    data.forcepsY = data.height / 2
-    data.objectPlaced = False
-    data.size = None
-    data.objectBool = False
-    data.object2Bool = False
-    data.seen2 = 0
-    data.object = [[None, None] for i in range(random.randint(1, 5))]
-    data.object2 = [[None, None] for j in range(random.randint(1, 5))]
-    data.surgSquarePoints = [[data.width / 2 - 200, data.height / 2 - 175],
-                             [data.width / 2 - 200, data.height / 2 + 175],
-                             [data.width / 2 + 200, data.height / 2 + 175],
-                             [data.width / 2 + 200, data.height / 2 - 175]]
-    data.leftCut, data.rightCut = 4, 4
-    data.surg = [data.width / 2 - data.leftCut, data.height / 2 - 150,
-                 data.width / 2 + data.rightCut,
-                 data.height / 2 + 150]
-
-    data.surgRH = [data.width / 2 + 200, data.height / 2]
-    data.surgLH = [data.width / 2 - 200, data.height / 2]
-    data.surgInstruction = "Rotate hands outwards to open up wound."
-    data.size2Y1 = 1
-    data.size2Y2 = 1
-    data.size2X = 1
 
 
 ##########################################################################
