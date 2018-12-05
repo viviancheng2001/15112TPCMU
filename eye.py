@@ -6,6 +6,18 @@ from Leap.Other.Leap import SwipeGesture
 from Tkinter import *
 from PIL import Image, ImageTk
 
+import numpy as np
+
+###############################################################################
+
+# CITATION: Created using outline of providedStarterFile leapMotionDemo.py
+# which includes:
+# LeapMotion built-in variables/gesture-detection functions from leap
+# motion library
+# 112 Tkinter Framework, from the CMU 15-112 course
+
+#Implements functions from leapMotion database to obtain hand data
+###############################################################################
 
 from visual import *
 
@@ -55,11 +67,11 @@ eyeball= sphere(pos = [0,0,0], material =tex, radius = 1, axis = (1,0,0))
 
 
 # vect = (eyeball.radius*2,0,0)
-vect = [eyeball.radius,0,0]
-e = sphere(color =
-color.red, pos = eyeball.pos -vect,
-           axis = (1, 0,0),radius = \
-    0.1)
+vect = [eyeball.radius, 0, 0]
+e = sphere(color=
+           color.red, pos=eyeball.pos - vect,
+           axis=(1, 0, 0), radius= \
+               0.1)
 
 
 
