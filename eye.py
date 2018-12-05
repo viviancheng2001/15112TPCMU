@@ -47,8 +47,6 @@ eyeBoard=       [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 # eyeBoard[random.randint(0,len(eyeBoard)-1)][random.randint(0,len(eyeBoard)-1)]\
 #     = 250
 
-
-
 # tex = materials.texture(data=eyeBoard,
 #                      mapping="sign",
 #                      interpolate=False)
@@ -56,24 +54,37 @@ eyeBoard=       [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 im = Image.open('images/eyeNew.jpg')  # size must be power of 2, ie 128 x 128
 tex = materials.texture(data=im, mapping='sign')
 
-# mybox = box(pos=(1,1,1,), length=2, height=3, width=0.1)
 
 
 
-eyeball= sphere(pos = [0,0,0], material =tex, radius = 1, axis = (1,0,0))
-# L = label( pos=(0,0,0), linecolor = color.red, opacity = 0.1,
-#     height=50, text = "    ")
-
-
-
-# vect = (eyeball.radius*2,0,0)
-vect = [eyeball.radius, 0, 0]
+eyeball= sphere(pos = [0,0,0], material =tex, radius = 1)
+v= vector(eyeball.radius,0,0)
 e = sphere(color=
-           color.red, pos=eyeball.pos - vect,
-           axis=(1, 0, 0), radius= \
-               0.1)
+           color.red, pos=eyeball.pos + v, radius= \
+               0.2)
 
 
+eyeballSpeed = 0
+
+
+# Velocity v of the Moon (m/s)
+wM = abs(eyeballSpeed)/(e.radius)
+wE = abs(eyeballSpeed)/eyeball.radius
+
+theta0 = 0
+def positionEyeball(t):
+    theta = theta0 + wM * t
+    return theta
+
+def positione(t):
+    theta = theta0 + wE * t
+    return theta
+
+t = 0
+thetaTerra1 = 0
+dt = 5000
+dthetaE = positionEyeball(t+dt)- positionEyeball(t)
+dthetae = positione(t+dt) - positione(t)
 
 
 
@@ -89,11 +100,13 @@ def zoom(eyeBallMoveable = True):
     #print(hand_speed[1])
     if eyeBallMoveable == True:
         if hand_speed[1] <-50 and eyeball.radius >-2:
-            eyeball.radius -=abs(hand_speed[1]) / 500000
-            e.radius -=abs(hand_speed[1]) / 500000
+            eyeballSpeed = abs(hand_speed[1]) / 500000
+            eyeball.radius -= eyeballSpeed
+            e.radius -=eyeballSpeed
         elif hand_speed[1] > 50 and eyeball.radius < 4:
-            eyeball.radius +=abs(hand_speed[1]) / 500000
-            e.radius += abs(hand_speed[1]) / 500000
+            eyeballSpeed = abs(hand_speed[1]) / 500000
+            eyeball.radius +=eyeballSpeed
+            e.radius += eyeballSpeed
         elif eyeball.radius >= 4 or eyeball.radius <= -2:
             eyeBallMoveable = False
 
@@ -118,7 +131,7 @@ b = box(pos=(0,0,5), size=(0.5,0.5,0),axis=(1,0,0), color=color.red, opacity =
 0.2, makeTrail = True)
 
 
-def process(ev, i =0.000005):
+def process(ev, i =0.005):
     if ev.key == 'down':
         b.color = color.yellow
         b.pos[1] -= i
@@ -133,20 +146,19 @@ def process(ev, i =0.000005):
         b.pos[0] +=i
 
 
-
-
-
-
-
 x = 0
 y = 0
 z = 0
 while True:  # Endless Loop
+
+
+
     f = c.frame()
     # if zoom() == True:
     #     if eyeball.radius + 0.01<5:
     #         eyeball.radius+=0.001
     if not f.hands.is_empty:
+
         zoom()
         pitch = detectHandPitch() +90
         roll = detectHandRoll()
@@ -158,14 +170,15 @@ while True:  # Endless Loop
             ang = 0.005
             x,y,z = 0,1,0
             eyeball.pos[0] +=0.0025
-            e.pos[0] +=0.0025
+
         elif roll>50:
             pitch = 0
             rate(abs(roll) / 2 * 50)
             x, y, z = 0, 1, 0
             ang = -0.005
             eyeball.pos[0] -= 0.0025
-            e.pos[0] -= 0.0025
+
+
         if pitch < -50:
             roll = 0
             rate(abs(pitch)/2*50)
@@ -177,7 +190,14 @@ while True:  # Endless Loop
             ang = 0.005
             x, y, z = 1, 0, 0
 
-        eyeball.rotate(angle=ang, axis=(x,y,z))
-        e.rotate(angle = ang, axis = (x,y,z))
+        thetaEyeball = positionEyeball(t + dt) - positionEyeball(t)
+        thetae = positione(t + dt) - positione(t)
+
+        eyeball.rotate(eyeball.pos, angle=ang,axis=(x,y,z))
+        v = rotate(v,angle=ang,  axis=(x,y,z))
+        e.pos = eyeball.pos + v
+        t += dt
+        # e.rotate(angle = ang, axis = (x,y,z))
         scene.bind('keydown', process)
+
 
