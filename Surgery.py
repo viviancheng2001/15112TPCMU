@@ -10,17 +10,24 @@
 import math
 import os
 import random
+import time
 # import Leap, sys, thread, time
 import sys
 import os
+import datetime
+from datetime import date
 
 sys.path.insert(0, "/Users/viviancheng/Desktop/LeapSDK/lib/x86")
 from Leap.Other import Leap
 from Tkinter import *
 from PIL import Image, ImageTk
+from tkSimpleDialog import askstring
 
 
 def init(data):
+    data.time1 = 0
+    data.diff = 0
+    data.time2 = 0
     # Initialize mode and controller
     data.mode = "launch"  # current mode
     data.controller = Leap.Controller()
@@ -62,7 +69,7 @@ def init(data):
     data.candies = [[data.width / 5 - 90, 50], [data.width / 5 + 10, 50],
                     [data.width / 5 + 120, 50]]
     # Launch Screen medical facts
-
+    data.name = ''
     data.pitch = 0
     data.counting = 0
     data.color = None
@@ -73,6 +80,7 @@ def init(data):
     # CITATION: medical facts are from online (
     # https://www.disabled-world.com/medical/human-body-facts.php)
     data.medText = 'medFacts.txt'
+    #112 file io method learned in 112
     data.medFacts = [line for line in open(data.medText) if len(line) < 100]
     data.factText = data.medFacts[random.randint(0, len(data.medFacts) - 1)]
     data.displayFact = False
@@ -216,8 +224,19 @@ def keyPressed(event, data):
         endKeyPressed(event, data)
 
 
+
+
+
 # This function controls timerFired for each mode
 def timerFired(data):
+    if data.counting == 0:
+        # root = Tk()
+        # root.withdraw()  # hide main window
+
+        data.name= askstring("Name", "What is your name?")
+        print(data.name)
+
+
     if data.counting % 200 == 0:
         data.displayFact = True
     else:
@@ -304,6 +323,8 @@ def launchMousePressed(event, data):
             event.y < data.height / 2 + 100 and event.y >= data.height / 2 + 50:
         data.currImage = 'images/office.jpg'
         data.mode = "anesthesia"
+        data.time1 = time.time()
+
     # If select Dental mode
     elif event.x >= data.width / 2 - 175 and event.x < data.width / 2 - 50 and \
             event.y >= data.height / 2 + 50 and event.y < data.height / 2 + 100:
@@ -1023,7 +1044,7 @@ def drawBackground(canvas, data):
                             'incision '
                             'along line')
 
-    canvas.create_text(data.width / 2, data.height - 50, text="Time Left: " +
+    canvas.create_text(data.width / 2, data.height - 45, text="Time Left: " +
                                                               str(data.seconds),
                        font="Arial 20 bold",
                        fill='white')
@@ -1527,6 +1548,8 @@ def stitchMousePressed(event, data):
         reinitExtraction(data)
         data.mode = 'extract'
     elif rightButtonPressed(event, data):
+        data.time2 = time.time()
+        data.diff = data.time2 - data.time1
         data.mode = 'end'
 
 
@@ -1606,6 +1629,8 @@ def stitchUpdateLeapMotionData(data):
             data.nextStep = False
         if data.finishedSuturing == True:
             data.mode = 'end'
+
+
 
 
 # Detect if user rotates their hand in order to simulate tying knot
@@ -1728,8 +1753,30 @@ def endRedrawAll(canvas, data):
     label = Label(image=end2)
     label.image = end2  # keep a reference!
 
-    canvas.create_text(data.width / 2, data.height - 100, font=
-    "Arial 25 bold", text="CONGRATULATIONS! Press p to play again")
+    canvas.create_text(data.width / 2, data.height - 340, font=
+    "Arial 30 bold", text="CONGRATULATIONS!",
+                       fill = 'medium turquoise', anchor = 'n')
+    canvas.create_text(data.width / 2, data.height-300, font=
+    "Arial 15 bold", text="Press p to play again. ")
+
+    canvas.create_text(data.width/2-10, 150, text = "Dr. " + data.name,
+                       font = "Arial 15 bold", anchor = 'w')
+
+    today = date.today()
+
+    canvas.create_text(data.width / 2-10, 180, text="Licensed on " +
+                                                      str(today),
+                       font="Arial 15 bold", anchor = 'w')
+
+    print('t1', data.time1)
+    print('t2', data.time2)
+    canvas.create_text(data.width / 2 - 10, 210, text="Time taken: " +
+                                                      str("%.2f" % data.diff)
+                                                      + " "
+                                                                       "seconds",
+                       font="Arial 15 bold", anchor='w')
+
+
 
 
 ################################################################################

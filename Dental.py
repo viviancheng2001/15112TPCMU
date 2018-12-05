@@ -1,7 +1,12 @@
 ###############################################################################
 
 # CITATION: Created using outline of providedStarterFile leapMotionDemo.py
+# which includes:
+# LeapMotion built-in variables/gesture-detection functions from leap
+# motion library
+# 112 Tkinter Framework, from the CMU 15-112 course
 
+#Implements functions from leapMotion database to obtain hand data
 ###############################################################################
 
 # ]import Leap, sys, thread, time
@@ -56,6 +61,10 @@ finally:
 #######SWIPING SETUP##############
 
 def init(data):
+    data.teethInstructions = ["Cleaned STAINED teeth with "
+                              "toothbrush",  "Don't touch ANY teeth with "
+                                             "mirror!",
+                              "Remove ROTTEN teeth with drill"]
     data.toolWidth = 175
     data.wrongTool = False
     data.toolHeight = 190
@@ -268,7 +277,7 @@ def drawTeeth(canvas,data):
 
 def drawHand(canvas,data):
     handGrasp = Image.open(data.handGrasp[2])
-    handGrasp2 = handGrasp.resize((125, 125), Image.ANTIALIAS)
+    handGrasp2 = handGrasp.resize((250,250), Image.ANTIALIAS)
     handGrasp3 = ImageTk.PhotoImage(handGrasp2)
     canvas.create_image(data.handGrasp[0], data.handGrasp[1], image=handGrasp3)
     label = Label(image=handGrasp3)
@@ -277,7 +286,7 @@ def drawHand(canvas,data):
 
 
 def drawBackground(canvas,data):
-    bg = Image.open('images/dentistoffice.jpg')
+    bg = Image.open('images/dent1.jpg')
     # resize to fit canvas
     bgIm = bg.resize((700, 650), Image.ANTIALIAS)
     bgIm2 = ImageTk.PhotoImage(bgIm)
@@ -288,14 +297,14 @@ def drawBackground(canvas,data):
     # Background image: default image of a patient's open mouth
     mouth = Image.open('images/openmouth.gif')
     # resize to fit canvas
-    mouth2 =mouth.resize((600, 650), Image.ANTIALIAS)
+    mouth2 =mouth.resize((650, 650), Image.ANTIALIAS)
     mouth3 = ImageTk.PhotoImage(mouth2)
     canvas.create_image(data.width / 2, data.height / 2, image=mouth3)
     label = Label(image=mouth3)
     label.image = mouth3 # keep a reference!
 def drawInstructions(canvas,data):
-    canvas.create_text(data.width / 2, 30, font="Arial 50 bold", text=
-    "Dental Mode")
+    canvas.create_text(data.width / 2, 40, font="Arial 50 bold", text=
+    "Dental Mode", fill = 'RoyalBlue1')
     canvas.create_text(data.width - 200, data.height - 75, font="Arial 20 bold",
                        text='Swipe to change tool')
     canvas.create_text(data.width - 200, data.height - 50, font="Arial 15 "
@@ -303,15 +312,13 @@ def drawInstructions(canvas,data):
                        "You are using the %s" % data.tools[data.toolIndex][0])
 
     # Instructions for user
-    canvas.create_text(30, data.height - 65, text=' Navigate hand to grasp '
-                                                  'tool.\n Remove rotten '
-                                                  'teeth with DRILL, '
-                                                  'clean stained \n '
-                                                  'teeth with TOOTHBRUSH, '
-                                                  'and don''t '
-                                                  'touch '
-                                                  'white teeth!', anchor='w')
 
+    canvas.create_text(30, data.height - 75, font = "Arial 18 bold",
+                       text=' ' \
+                                                                    'NAVIGATE HAND TO GRASP TOOL.', anchor ='w')
+    canvas.create_text(30, data.height - 50, font="Arial 18 bold",
+                           text= data.teethInstructions[data.toolIndex],
+                       fill = 'Red', anchor = 'w')
 
 
 def redrawAll(canvas, data):

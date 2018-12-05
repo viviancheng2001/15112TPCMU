@@ -2,8 +2,8 @@ import numpy as np
 import Tkinter as tk
 
 import matplotlib
-import patientsentiment
-from patientsentiment import returnPoints
+import Rescue
+from Rescue import returnPoints
 matplotlib.use('TkAgg')
 
 from scipy.interpolate import spline
@@ -20,7 +20,7 @@ plt1 = fig.add_axes([0.1, 0.5, 0.8, 0.4],
                    xticklabels=[], ylim=(-400,0))
 plt2 = fig.add_axes([0.1, 0.1, 0.8, 0.4],
                    ylim=(-1.2, 1.2))
-handVelPoints = patientsentiment.returnPoints()
+handVelPoints = Rescue.returnPoints()
 axisPts = [i for i in range(len(handVelPoints))]
 plt1.plot(handVelPoints)
 
@@ -35,4 +35,4 @@ vitalsMonitor= numpy.tile(wavesFinal , beats)
 plt2.plot(vitalsMonitor)
 
 
-plt.show()
+# plt.show()

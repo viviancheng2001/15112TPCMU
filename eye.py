@@ -21,8 +21,8 @@ import numpy as np
 
 from visual import *
 
-scene.range = 5 #Sets Zoom Distance
 
+scene.range = 5 #Sets Zoom Distance
 scene.width = 500
 scene.height = 500
 scene.autocenter = True #Auto Centers Camera on Scene
@@ -145,7 +145,10 @@ def process(ev, i =0.005):
         b.color = color.orange
         b.pos[0] +=i
 
-
+def change(ev):
+    e.visible = not e.visible
+    if e.visible == False:
+        print("SUCCESS!")
 x = 0
 y = 0
 z = 0
@@ -157,8 +160,12 @@ while True:  # Endless Loop
     # if zoom() == True:
     #     if eyeball.radius + 0.01<5:
     #         eyeball.radius+=0.001
-    if not f.hands.is_empty:
+    if f.hands.is_empty:
+        pass
+    else:
+        scene.bind('click', change)
 
+        # scene.bind('keydown', process)
         zoom()
         pitch = detectHandPitch() +90
         roll = detectHandRoll()
@@ -170,6 +177,7 @@ while True:  # Endless Loop
             ang = 0.005
             x,y,z = 0,1,0
             eyeball.pos[0] +=0.0025
+            e.pos[0] += 0.00025
 
         elif roll>50:
             pitch = 0
@@ -177,6 +185,7 @@ while True:  # Endless Loop
             x, y, z = 0, 1, 0
             ang = -0.005
             eyeball.pos[0] -= 0.0025
+            e.pos[0]-=0.00025
 
 
         if pitch < -50:
@@ -198,6 +207,4 @@ while True:  # Endless Loop
         e.pos = eyeball.pos + v
         t += dt
         # e.rotate(angle = ang, axis = (x,y,z))
-        scene.bind('keydown', process)
-
 
