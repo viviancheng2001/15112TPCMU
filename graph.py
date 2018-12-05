@@ -1,47 +1,38 @@
-
-import Surgery
 import numpy as np
-from Surgery import returnPoints
+import Tkinter as tk
+
 import matplotlib
-matplotlib.use("TkAgg")
+import patientsentiment
+from patientsentiment import returnPoints
+matplotlib.use('TkAgg')
+
 from scipy.interpolate import spline
-from matplotlib import pyplot as plt
 
-
-twistYawpts,twistRollpts, axispts = Surgery.returnPoints()
-
-axisPts = [i for i in range(len(twistYawpts))]
-
-#################    YAW    #############################
-
-T = np.array(axisPts)
-power = np.array(twistYawpts)
-
-xnew = np.linspace(T.min(), T.max(), 300)
-powerSmooth = spline(T, power, xnew)
-plt.title("Hand Yaw")
-plt.plot(xnew, powerSmooth, 'ro')
-
-#
-# fig = plt.figure()
-# fig.suptitle('yaw', fontsize = 20)
-
-
-# plt.axis([0,len(twistYawpts), -150,150])
-# # line, = plt.plot(axisPts,twistYawpts, '-')
-# # line.set_antialiased (True)
-# # plt.ylabel('yaw')
-# plt.show()
-
-
-#################     ROLL       #############################
-
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
+import pylab
+import scipy.signal as signal
+import numpy
 
 fig = plt.figure()
-fig.suptitle('roll', fontsize = 20)
+fig.suptitle('Compression Velocity(mm/s)/Electrocardiogram Output(V)')
+plt1 = fig.add_axes([0.1, 0.5, 0.8, 0.4],
+                   xticklabels=[], ylim=(-400,0))
+plt2 = fig.add_axes([0.1, 0.1, 0.8, 0.4],
+                   ylim=(-1.2, 1.2))
+handVelPoints = patientsentiment.returnPoints()
+axisPts = [i for i in range(len(handVelPoints))]
+plt1.plot(handVelPoints)
 
-plt.plot(axisPts, twistRollpts, 'ro')
-plt.axis([0,len(twistRollpts), -150,150])
-line, = plt.plot(axisPts,twistRollpts, '-')
-plt.ylabel('roll')
+
+waves = signal.wavelets.daub(10) #daubechies wavelets
+pause = numpy.zeros(10, dtype=float)
+wavesFinal= numpy.concatenate([waves,pause])
+heartRate = 60
+beats= int(10 * heartRate / 60)
+
+vitalsMonitor= numpy.tile(wavesFinal , beats)
+plt2.plot(vitalsMonitor)
+
+
 plt.show()
