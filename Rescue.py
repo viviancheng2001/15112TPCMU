@@ -1,4 +1,13 @@
 
+###############################################################################
+# CITATION: Created using outline of providedStarterFile leapMotionDemo.py
+# which includes:
+# LeapMotion built-in variables/gesture-detection functions from leap
+# motion library
+# 112 Tkinter Framework, from the CMU 15-112 course
+
+#Implements functions from leapMotion database to obtain hand data
+###############################################################################
 import sys
 
 
@@ -31,6 +40,8 @@ from matplotlib.figure import Figure
 ####################################
 
 def init(data):
+    data.ecg = ['images/ecg.gif', 'images/ecgflat.jpg']
+    data.ecgIndex = 0
     data.compressionsPerSecond =0
     data.countCompressions = 0
     data.seconds = 0
@@ -68,6 +79,9 @@ def keyPressed(event, data):
     # use event.char and event.keysym
     pass
 
+#Implement AI finite state machine concept (switching modes): if user's hands
+# idle
+# for too long, sudden spike in temperature of patient causes death
 def checkIdle(data):
     previousFrame = data.controller.frame(1)
     if data.hand_identifier != None:
@@ -79,6 +93,9 @@ def checkIdle(data):
                 overHeatedMode(data)
                 data.countIdle = 0
 
+#Implement AI finite state machine concept pt 2: if user is persistent and
+# consistently does compressions without pausing, patient is miraculously
+# revived despite heartbeat/temp
 def checkPersist(data):
     previousFrame = data.controller.frame(1)
     if data.hand_identifier != None:
@@ -90,11 +107,13 @@ def checkPersist(data):
                 miracleMode(data)
                 data.countPersist = 0
 
+#miracle mode from being persistent
 def miracleMode(data):
     data.temp = 99
     data.heartRate = 65
     data.miracle = True
 
+#temp spike mode from being idle
 def overHeatedMode(data):
     data.temp +=2.5
     data.heartRate = 150
@@ -103,15 +122,15 @@ def overHeatedMode(data):
     data.overHeat = True
 
 
-
-
+#If heartrate/temp reaches adequate level
 def checkSaved(data):
     if 60 <= data.heartRate <100 and 97.5<data.temp <99.5:
         data.success = True
         data.instructionText = "You saved the patient!"
 
 
-
+#heartRate drops every few timerfired calls, user must do hand compressions
+# to raise it
 def timerFired(data):
     if data.seconds > 0:
         data.compressionsPerSecond = data.countCompressions / data.seconds
@@ -129,7 +148,6 @@ def timerFired(data):
             elif 0<=data.heartRate <5:
                 data.heartRate = 0
                 data.failed = True
-            # data.temp -=0.5
         if 0<=data.heartRate < 30:
             data.skinColorIndex = 1
             data.eyeCoord = 2
@@ -140,27 +158,36 @@ def timerFired(data):
         elif 60 <= data.heartRate < 100:
             data.skinColorIndex = 3
             data.eyeCoord = 10
+        #check FSM modes and heartbeat/temp levels
         checkIdle(data)
-        checkSaved(data)
         checkPersist(data)
+        checkSaved(data)
+    #if heartbeat falls to 0
     if data.failed == True:
         data.instructionText = "You did not save the patient!"
         data.eyeCoord = 1
         data.skinColorIndex = 0
+        data.ecgIndex = 1
+    #if user is idle and tempSpike occurs
     elif data.overHeat == True:
         data.instructionText = "You neglected your patient too long and he " \
                                "overheated!"
         data.skinColorIndex = 7
         data.eyeCoord = 15
+        data.ecgIndex = 1
+    #If user is persistent
     elif data.miracle == True:
         data.eyeCoord = 10
         data.skinColorIndex = 3
         data.instructionText = "Your patient was magically cured! \n Perhaps it " \
                                "had something to do with your persistence..."
+        data.ecgIndex = 0
+    #if heartbeat/temp reaches adequate levels
     elif data.success == True:
         data.eyeCoord = 10
         data.skinColorIndex = 3
         data.instructionText = "You saved the patient!"
+        data.ecgIndex = 0
 
 
 handVel = []
@@ -168,49 +195,46 @@ def updateLeapMotionData(data):
     data.frame = data.controller.frame()
     rightHand = data.frame.hands.rightmost
 
-    right_pointable = rightHand.pointables.frontmost  # detected right finger
-
     app_width = 700
     app_height = 600
     # CITATION: Create 2D interaction box from leapMotion library
-    if right_pointable.is_valid:
+    if rightHand.is_valid:
         print('valid')
         iBox = data.frame.interaction_box
-        leapPointR = right_pointable.stabilized_tip_position
+        leapPointR = rightHand.palm_position
+
         normalizedPointR = iBox.normalize_point(leapPointR, True)
 
-        app_xR = normalizedPointR.x * app_width  # x coord of RH finger
-        app_yR = (1 - normalizedPointR.y) * app_height  # y coord of RH finger
+        app_xR = normalizedPointR.x * app_width  # x coord of RH palm
+        app_yR = (1 - normalizedPointR.y) * app_height  # y coord of RH palm
         data.hand[0], data.hand[1] = app_xR, app_yR
 
+    #If chest compressions detected, keep track of counter. Increase heart
+    # rate to save patient
     if detectPress(data) == True:
         data.countCompressions +=1
-        # print('press!!!')
         if data.heartRate > 0:
             data.heartRate += 2
 
 
 
-
-def controlTemp(data):
-    pass
 def printLeapMotionData(data):
     pass
 
 
+#5 fingers extended, hand must be pressing down. Add hand velocity to graph
+# to plot
 def detectPress(data):
     frame = data.controller.frame()
     rightHand = data.frame.hands.rightmost
     data.hand_identifier = rightHand.id
     hand_speed = rightHand.palm_velocity
-    # print(hand_speed)
-    if rightHand.is_valid and len(frame.fingers.extended()) == 1:
-        print('ye')
+    if rightHand.is_valid and len(frame.fingers.extended()) == 5:
         if hand_speed[1] < -100:
             handVel.append(hand_speed[1])
-            print('okk')
             return True
 
+#used in graph.py to plot
 def returnPoints():
     return handVel
 
@@ -225,9 +249,16 @@ def redrawAll(canvas, data):
     label.image = needle2
 
 
-
     canvas.create_rectangle(data.width-500, 10, data.width-10,300, fill =
     'gray17')
+
+    ecg = Image.open(data.ecg[data.ecgIndex])
+    ecg1 = ecg.resize((470, 225), Image.ANTIALIAS)
+    ecg2 = ImageTk.PhotoImage(ecg1)
+    canvas.create_image(data.width/2 + 100, data.height/3.5 + 10, image=ecg2)
+    label = Label(image=ecg2)
+    label.image = ecg2  # keep a reference!
+
 
     canvas.create_text(data.width-250, 25,font = "Arial 20 bold", text = \
         "Heart Rate (bpm): " \
@@ -240,8 +271,8 @@ def redrawAll(canvas, data):
         "" + str(
            data.temp),
                        fill='blue')
-    canvas.create_oval(data.width/2-80,data.height/2-40,
-                       data.width/2+120,data.height/2 + 160 ,
+    canvas.create_oval(data.width/2-60,data.height/2-20,
+                       data.width/2+100,data.height/2 + 160 ,
                        fill =data.skinColor[data.skinColorIndex])
 
 
@@ -287,7 +318,6 @@ def redrawAll(canvas, data):
                                                               'bold', text=str(
         data.instructionText), fill='black')
 
-
 ####################################
 # use the run function as-is
 ####################################
@@ -314,18 +344,6 @@ def run(width=300, height=300):
         redrawAllWrapper(canvas, data)
         # pause, then call timerFired again
         canvas.after(data.timerDelay, timerFiredWrapper, canvas, data)
-
-    def move_figure(f, x, y):
-        """Move figure's upper left corner to pixel (x, y)"""
-        backend = matplotlib.get_backend()
-        if backend == 'TkAgg':
-            f.canvas.manager.window.wm_geometry("+%d+%d" % (x, y))
-        elif backend == 'WXAgg':
-            f.canvas.manager.window.SetPosition((x, y))
-        else:
-            # This works for QT and GTK
-            # You can also use window.setGeometry
-            f.canvas.manager.window.move(x, y)
     # Set up data and call init
     class Struct(object): pass
     data = Struct()
@@ -337,46 +355,8 @@ def run(width=300, height=300):
     root = Tk()
     canvas = Canvas(root, width=data.width, height=data.height)
 
-    fig = plt.figure()
-    fig.suptitle('Compression Velocity(mm/s)/Electrocardiogram Output(V)')
-    plt1 = fig.add_axes([0.1, 0.5, 0.8, 0.4],
-                        xticklabels=[], ylim=(-400, 0))
-    plt2 = fig.add_axes([0.1, 0.1, 0.8, 0.4],
-                        ylim=(-1.2, 1.2))
-    handVelPoints = returnPoints()
-    axisPts = [i for i in range(len(handVelPoints))]
-    plt1.plot(handVelPoints)
-
-    waves = signal.wavelets.daub(10)  # daubechies wavelets
-    pause = numpy.zeros(10, dtype=float)
-    wavesFinal = numpy.concatenate([waves, pause])
-    heartRate = 60
-    beats = int(10 * heartRate / 60)
-
-    vitalsMonitor = numpy.tile(wavesFinal, beats)
-    plt2.plot(vitalsMonitor)
-
-    # fig = Figure(figsize=(5, 4), dpi=100)
-    # # fig.set_size_inches(1,1, forward=True)
-    # t = np.arange(0, 3, .01)
-    # fig.add_subplot(111).plot(t, 2 * np.sin(2 * np.pi * t))
-    # # mngr = plt.get_current_fig_manager()
-    # # mngr.window.setGeometry(50,50,50,50)
-
-
-    fig.set_figheight(3)
-    fig.set_figwidth(0.5)
-    # move_figure(fig, 20,20 )
-
-    canvas2 = FigureCanvasTkAgg(fig, master=root)
-
-    canvas2.get_tk_widget().pack(side=BOTTOM, fill=BOTH, expand=True)
-    # canvas2.draw_idle()
-
-
     canvas.pack()
     #canvas.show()
-    canvas2._tkcanvas.pack(side=TOP, fill=BOTH, expand=True)
     # set up events
     root.bind("<Button-1>", lambda event:
                             mousePressedWrapper(event, canvas, data))
@@ -388,4 +368,3 @@ def run(width=300, height=300):
     print("bye!")
 
 run(700,600)
-

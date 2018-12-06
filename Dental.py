@@ -18,7 +18,7 @@ sys.path.insert(0, "/Users/viviancheng/Desktop/LeapSDK/lib/x86")
 
 from Leap.Other import Leap
 from Leap.Other.Leap import SwipeGesture
-
+import random
 from Tkinter import *
 
 from PIL import Image, ImageTk
@@ -61,6 +61,15 @@ finally:
 #######SWIPING SETUP##############
 
 def init(data):
+    data.imageWidth = 50
+    data.imageHeight = 50
+    data.imageLeft = 50
+    data.imageTop = 50
+    data.imageSpeed = 20
+    data.headingDown = True
+    data.headingRight = True
+    data.falling = []
+    data.fallingCandy = ['images/cc1.gif','images/cc2.gif','images/cc3.gif']
     data.teethInstructions = ["Cleaned STAINED teeth with "
                               "toothbrush",  "Don't touch ANY teeth with "
                                              "mirror!",
@@ -114,8 +123,32 @@ def keyPressed(event, data):
 
 
 def timerFired(data):
+#Control candy movements as they appear
+    for candy in (data.falling):
+        bounceCandy(data,candy)
+        move(data,candy)
     updateLeapMotionData(data)
     printLeapMotionData(data)
+
+#Move candy position
+def move(data,i):
+    i[1] += i[3] * i[4][0]
+    i[2] += i[3] * i[4][1]
+
+#For each candy, keep it in screen's bounds
+def bounceCandy(data,i):
+    if i[1] - data.imageWidth/2 <= 0:  # Instead of wrapping around, multiply
+        # speed
+        # by -1 to reverse direction
+        i[3]= -1 * i[3]
+    if i[1] + data.imageWidth/2 >= data.width:
+        i[3] = -1 * i[3]
+    if i[2] - data.imageHeight/2 <= 0:
+        i[3] = -1 * i[3]
+    if i[2] + data.imageHeight/2 >= data.height:
+        i[3] = -1 * i[3]
+
+
 
 ########Check if grabbing/making a fist, which allows us to pick up and
             # move around surgical tool###########
@@ -146,6 +179,23 @@ def checkToolCollisionWithTooth(data, tooth):
             data.toolHeight / 2 + 10 \
             < tooth[3]:
         print('collision!')
+        return True
+    else:
+        return False
+
+#Check if tool collides with moving candy
+def checkToolCollisionWithMovingCandy(data,i):
+    if (data.tools[data.toolIndex])[2] + data.toolWidth / 2 - \
+            10 > i[1] - data.imageWidth/2 and (
+            data.tools[data.toolIndex])[2] + data.toolWidth / 2 \
+            - 10 < i[1] + data.imageWidth/2 and \
+            (data.tools[
+                data.toolIndex])[3] - data.toolHeight / 2 + 10 > \
+            i[2] - data.imageHeight/ 2 \
+            and (data.tools[data.toolIndex])[3] - \
+            data.toolHeight / 2 + 10 \
+            < i[2] + data.imageHeight/ 2:
+        print('caaaa')
         return True
     else:
         return False
@@ -209,6 +259,15 @@ def checkGameOver(data):
 def updateLeapMotionData(data):
     if data.gameOver == False and data.won == False:  # if task not ended yet
         data.timer += 1
+        if data.timer%20 == 0:
+            data.imageSpeed +=5
+            d = [(-1, 0),(1, 0),(0,-1),(0,1)]
+
+            data.falling.append([random.choice(data.fallingCandy),
+                                      random.randint(0,data.width),
+                                      random.randint(0,data.height),
+                                      random.randint(5,10),
+                                      random.choice(d)])
         frame = data.controller.frame()
         app_width = 700
         app_height = 600
@@ -251,11 +310,15 @@ def updateLeapMotionData(data):
 
         detectSwipe(data)
 
+        for i in data.falling:
+            if checkToolCollisionWithMovingCandy(data,i) == True:
+                data.gameOver = True
+
 
 def printLeapMotionData(data):
     pass
 
-
+#Draw teeth
 def drawTeeth(canvas,data):
     for i in range(len((data.topTeeth))):
         x0 = (data.topTeeth[i])[0]
@@ -274,7 +337,7 @@ def drawTeeth(canvas,data):
                         toolImg)
     label = Label(image=toolImg)
     label.image = toolImg  # keep a reference!
-
+#Draw hand
 def drawHand(canvas,data):
     handGrasp = Image.open(data.handGrasp[2])
     handGrasp2 = handGrasp.resize((250,250), Image.ANTIALIAS)
@@ -329,6 +392,16 @@ def redrawAll(canvas, data):
     drawTeeth(canvas,data)
     # Draw virtual hand
     drawHand(canvas,data)
+
+
+    for i in range(len(data.falling)):
+        to1 = Image.open(data.falling[i][0])
+        to2 = to1.resize((50,50), Image.ANTIALIAS)
+        to3 = ImageTk.PhotoImage(to2)
+        canvas.create_image(data.falling[i][1],data.falling[i][2],
+                            image=to3)
+        label = Label(image=to3)
+        label.image = to3
 
     ############Checking Game Over####################
     if checkGameOver(data) == True:
