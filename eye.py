@@ -21,9 +21,8 @@ import numpy as np
 
 from visual import *
 
-success = False
-
 scene.range = 5 #Sets Zoom Distance
+
 scene.width = 500
 scene.height = 500
 scene.autocenter = True #Auto Centers Camera on Scene
@@ -58,9 +57,9 @@ tex = materials.texture(data=im, mapping='sign')
 
 
 
-eyeball= sphere(pos = [0,0,0], material =tex, radius = 1, makeTrail = True)
+eyeball= sphere(pos = [0,0,0], material =tex, radius = 1)
 v= vector(eyeball.radius,0,0)
-e = sphere(visible = True,color=
+e = sphere(color=
            color.red, pos=eyeball.pos + v, radius= \
                0.2)
 
@@ -92,28 +91,29 @@ dthetae = positione(t+dt) - positione(t)
 
 
 T = text(text='Fix the eye',
-     align='center',pos = (0,1,0), color=color.green,linecolor = color.red)
+     align='center',pos = (0,4,0), color=color.green,linecolor = color.red)
 
+label(pos=(0,3.5,0), text='Use hands to rotate eyeball and find the stye')
+label(pos=(0,3.0,0), text='Stop eyeball motion by pressing any key')
+label(pos=(0,2.5,0), text='Remove stye by clicking on it')
 def zoom(eyeBallMoveable = True):
     frame = Leap.Controller().frame()
     hand = frame.hands[0]
     hand_speed = hand.palm_velocity
     #print(hand_speed[1])
     if eyeBallMoveable == True:
-        if hand_speed[1] <-50 and eyeball.radius >-2:
-            eyeballSpeed = abs(hand_speed[1]) / 500000
-            eyeball.radius -= eyeballSpeed
-            e.radius -=eyeballSpeed
-        elif hand_speed[1] > 50 and eyeball.radius < 4:
-            eyeballSpeed = abs(hand_speed[1]) / 500000
-            eyeball.radius +=eyeballSpeed
-            e.radius += eyeballSpeed
-        elif eyeball.radius >= 4 or eyeball.radius <= -2:
-            eyeBallMoveable = False
+        if e.radius <= eyeball.radius/5:
+            if hand_speed[1] <-50 and eyeball.radius >-2:
+                eyeballSpeed = abs(hand_speed[1]) / 500000
+                eyeball.radius -= eyeballSpeed
+                e.radius -=eyeballSpeed
+            elif hand_speed[1] > 50 and eyeball.radius < 4:
+                eyeballSpeed = abs(hand_speed[1]) / 500000
+                eyeball.radius +=eyeballSpeed
+                e.radius += eyeballSpeed
+            elif eyeball.radius >= 4 or eyeball.radius <= -2:
+                eyeBallMoveable = False
 
-    # evt = scene.waitfor('click keydown')
-    # if evt.event == 'click':
-    #     print('You clicked at', evt.pos)
 
 def detectHandRoll():
     frame = Leap.Controller().frame()
@@ -131,8 +131,18 @@ c = Leap.Controller()
 # b = box(pos=(0,0,5), size=(0.5,0.5,0),axis=(1,0,0), color=color.red, opacity =
 # 0.2, makeTrail = True)
 
-#
-# def process(ev, i =0.000005):
+
+
+T2 = text(text='Good work!',
+                  align='center', color=color.green, pos=(0, 4, 0), visible =
+          False)
+T3 = text(text='You failed!',
+                  align='center', color=color.green, pos=(0, 4, 0), visible =
+          False)
+
+T2.visible = False
+T3.visible = False
+# def process(ev, i =0.005):
 #     if ev.key == 'down':
 #         b.color = color.yellow
 #         b.pos[1] -= i
@@ -146,83 +156,83 @@ c = Leap.Controller()
 #         b.color = color.orange
 #         b.pos[0] +=i
 
-def change(ev):
-    global success
-    success = True
-    e.visible = False
-    # T2 = text(text='You fixed the eye!',
-    #           align='center', color=color.green, pos=(0, 1, 0))
-    # T.visible = False
-    # success = True
-    print ('success')
+def process():
+    print('processing')
+    ev = scene.mouse.getclick()
 
-if e.visible ==False:
-    success = True
+    print('clicked at' + str(ev.pos[0]))
+    print(e.pos[0])
+    sphere(pos=ev.pos, radius=0.1, visible = False)
+    if abs(ev.pos[0] - e.pos[0]) < 0.15:
+        print('collide')
+        e.visible = False
+        T2.visible = True
+        T.visible = False
+        T3.visible = False
+    else:
+        T3.visible = True
+        T.visible = False
+        T2.visible = False
+
+
+
 
 x = 0
 y = 0
 z = 0
-while success == False: # Endless Loop
-    e.visible = True
-    scene.bind('click', change)
+while T3.visible == False and T2.visible == False:  # Endless Loop
+
+
 
     f = c.frame()
     # if zoom() == True:
     #     if eyeball.radius + 0.01<5:
     #         eyeball.radius+=0.001
-    if f.hands.is_empty:
-        pass
-    else:
-
-        # scene.bind('keydown', process)
-        zoom()
-        pitch = detectHandPitch() +90
-        roll = detectHandRoll()
-        # print('pitch', pitch)
-        # print('roll', roll)
-        if roll < -50:
-            pitch = 0
-            rate(abs(roll) /2 * 5)  # Sets Animation Speed
-            print(abs(roll)/2*5)
-            ang = 0.005
-            x,y,z = 0,1,0
-            eyeball.pos[0] +=0.0025
-            e.pos[0] += 0.00025
-
-        elif roll>50:
-            pitch = 0
-            rate(abs(roll) / 2 * 5)
-            x, y, z = 0, 1, 0
-            ang = -0.005
-            eyeball.pos[0] -= 0.0025
-            e.pos[0]-=0.00025
 
 
-        if pitch < -50:
-            roll = 0
-            rate(abs(pitch)/2*5)
-            ang = -0.005
-            x,y,z = 1,0,0
-        elif pitch >50:
-            roll = 0
-            rate(abs(pitch)/2 * 50)
-            ang = 0.005
-            x, y, z = 1, 0, 0
+    zoom()
+    pitch = detectHandPitch() +90
+    roll = detectHandRoll()
+    # print('pitch', pitch)
+    # print('roll', roll)
+    if roll < -50:
+        pitch = 0
+        rate(abs(roll) /2 * 50)  # Sets Animation Speed
+        ang = 0.005
+        x,y,z = 0,1,0
+        eyeball.pos[0] +=0.0025
 
-        thetaEyeball = positionEyeball(t + dt) - positionEyeball(t)
-        thetae = positione(t + dt) - positione(t)
-
-        eyeball.rotate(eyeball.pos, angle=ang,axis=(x,y,z))
-        v = rotate(v,angle=ang,  axis=(x,y,z))
-        e.pos = eyeball.pos + v
-        t += dt
-        # scene.bind('keydown', process)
-        # e.rotate(angle = ang, axis = (x,y,z))
+    if roll>50:
+        pitch = 0
+        rate(abs(roll) / 2 * 50)
+        x, y, z = 0, 1, 0
+        ang = -0.005
+        eyeball.pos[0] -= 0.0025
 
 
-if success ==True:
-    T2 = text(text='Good work!',
-              align='center', color=color.green, pos=(0, 1, 0))
-    T.visible = False
+    if pitch < -50:
+        roll = 0
+        rate(abs(pitch)/2*50)
+        ang = -0.005
+        x,y,z = 1,0,0
+    if pitch >50:
+        roll = 0
+        rate(abs(pitch)/2 * 50)
+        ang = 0.005
+        x, y, z = 1, 0, 0
+
+    thetaEyeball = positionEyeball(t + dt) - positionEyeball(t)
+    thetae = positione(t + dt) - positione(t)
+
+    eyeball.rotate(eyeball.pos, angle=ang,axis=(x,y,z))
+    v = rotate(v,angle=ang,  axis=(x,y,z))
+    e.pos = eyeball.pos + v
+    t += dt
+    # e.rotate(angle = ang, axis = (x,y,z))
+    scene.bind('keydown', process)
 
 
+#
+# root = tk.Tk()
+# root.title("Control Sphere from here")
+# root.mainloop()

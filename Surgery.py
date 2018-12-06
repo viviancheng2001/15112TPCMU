@@ -318,12 +318,12 @@ def redrawAll(canvas, data):
 ###############################################################################
 
 def launchMousePressed(event, data):
+    data.time1 = time.time()
     # If select Surgery mode
     if event.x >= data.width / 2 + 50 and event.x < data.width / 2 + 175 and \
             event.y < data.height / 2 + 100 and event.y >= data.height / 2 + 50:
         data.currImage = 'images/office.jpg'
         data.mode = "anesthesia"
-        data.time1 = time.time()
 
     # If select Dental mode
     elif event.x >= data.width / 2 - 175 and event.x < data.width / 2 - 50 and \
@@ -331,6 +331,10 @@ def launchMousePressed(event, data):
         print("dental")
         os.system('python Dental.py')
 
+    elif event.x>=data.width/2 - 50 and event.x < data.width/2 + 50 and \
+            event.y >= data.height/2 + 50 and event.y < data.height/2 + 100:
+        print('eye')
+        os.system('python eye.py')
 
 def launchKeyPressed(event, data):
     pass
@@ -389,6 +393,18 @@ def launchRedrawAll(canvas, data):
     # Draw dental and surgery buttons
     drawDentalButton(canvas, data)
     drawSurgeryButton(canvas, data)
+    drawOtherButton(canvas,data)
+
+def drawOtherButton(canvas,data):
+    round_rectangle(canvas, data.width / 2 - 50, data.height / 2 + 50,
+                    data.width / 2 + 50,
+                    data.height / 2 + 100,
+                    fill=
+                    "gray")
+
+    canvas.create_text(data.width / 2 , data.height / 2 + 75, font=
+    "Arial 20  bold", fill=
+                       'black', text="OPTICAL")
 
 
 # Draw Dental button
@@ -415,6 +431,8 @@ def drawSurgeryButton(canvas, data):
                        'white', text="SURGEON")
 
 
+
+
 ############################################################################
 # ANESTHESIA MODE
 ############################################################################
@@ -425,7 +443,9 @@ def anesthesiaMousePressed(event, data):
     elif rightButtonPressed(event, data):
         reinitPatient(data)
         data.mode = 'patient'
-
+    elif event.x >data.width-170 and event.x<data.width-10 and \
+            event.y<data.height/2-10 and event.y> data.height/2-50:
+        os.system('python hypnosisAnesthesia.py')
 # keyPressed not used
 def anesthesiaKeyPressed(event, data):
     pass
@@ -437,6 +457,8 @@ def anesthesiaTimerFired(data):
     anesthesiaUpdateLeapMotionData(data)
     anesthesiaPrintLeapMotionData(data)
     checkCollisionSyringeBottle(data)
+
+
 
 
 # User must take a syringe and simulate filling up a syringe by following a
@@ -580,6 +602,14 @@ def drawBottle(canvas, data):
 # Draw out initial view of patient
 def anesthesiaRedrawAll(canvas, data):
     drawBackgroundAnesthesia(canvas, data)
+
+    canvas.create_rectangle(data.width-170,data.height/2-10, data.width-10,
+                            data.height/2-50,
+                            fill =
+    'pink')
+    canvas.create_text(data.width-170,data.height/2-30, text = "Try Hypnosis "
+                                                           "Anesthesia",
+                       anchor = 'w')
     canvas.create_text(data.width - 200, data.height / 2 + 7.5, fill='black',
                        font='Arial 15 bold',
                        text=data.anesthesiaInstruction)
