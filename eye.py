@@ -21,6 +21,7 @@ import numpy as np
 
 from visual import *
 
+success = False
 
 scene.range = 5 #Sets Zoom Distance
 scene.width = 500
@@ -57,9 +58,9 @@ tex = materials.texture(data=im, mapping='sign')
 
 
 
-eyeball= sphere(pos = [0,0,0], material =tex, radius = 1)
+eyeball= sphere(pos = [0,0,0], material =tex, radius = 1, makeTrail = True)
 v= vector(eyeball.radius,0,0)
-e = sphere(color=
+e = sphere(visible = True,color=
            color.red, pos=eyeball.pos + v, radius= \
                0.2)
 
@@ -127,34 +128,43 @@ def detectHandPitch():
     return pitch
 c = Leap.Controller()
 
-b = box(pos=(0,0,5), size=(0.5,0.5,0),axis=(1,0,0), color=color.red, opacity =
-0.2, makeTrail = True)
+# b = box(pos=(0,0,5), size=(0.5,0.5,0),axis=(1,0,0), color=color.red, opacity =
+# 0.2, makeTrail = True)
 
-
-def process(ev, i =0.005):
-    if ev.key == 'down':
-        b.color = color.yellow
-        b.pos[1] -= i
-    elif ev.key == "up":
-        b.color = color.green
-        b.pos[1] += i
-    elif ev.key == "left":
-        b.color = color.blue
-        b.pos[0] -=i
-    elif ev.key == "right":
-        b.color = color.orange
-        b.pos[0] +=i
+#
+# def process(ev, i =0.000005):
+#     if ev.key == 'down':
+#         b.color = color.yellow
+#         b.pos[1] -= i
+#     elif ev.key == "up":
+#         b.color = color.green
+#         b.pos[1] += i
+#     elif ev.key == "left":
+#         b.color = color.blue
+#         b.pos[0] -=i
+#     elif ev.key == "right":
+#         b.color = color.orange
+#         b.pos[0] +=i
 
 def change(ev):
-    e.visible = not e.visible
-    if e.visible == False:
-        print("SUCCESS!")
+    global success
+    success = True
+    e.visible = False
+    # T2 = text(text='You fixed the eye!',
+    #           align='center', color=color.green, pos=(0, 1, 0))
+    # T.visible = False
+    # success = True
+    print ('success')
+
+if e.visible ==False:
+    success = True
+
 x = 0
 y = 0
 z = 0
-while True:  # Endless Loop
-
-
+while success == False: # Endless Loop
+    e.visible = True
+    scene.bind('click', change)
 
     f = c.frame()
     # if zoom() == True:
@@ -163,7 +173,6 @@ while True:  # Endless Loop
     if f.hands.is_empty:
         pass
     else:
-        scene.bind('click', change)
 
         # scene.bind('keydown', process)
         zoom()
@@ -173,7 +182,8 @@ while True:  # Endless Loop
         # print('roll', roll)
         if roll < -50:
             pitch = 0
-            rate(abs(roll) /2 * 50)  # Sets Animation Speed
+            rate(abs(roll) /2 * 5)  # Sets Animation Speed
+            print(abs(roll)/2*5)
             ang = 0.005
             x,y,z = 0,1,0
             eyeball.pos[0] +=0.0025
@@ -181,7 +191,7 @@ while True:  # Endless Loop
 
         elif roll>50:
             pitch = 0
-            rate(abs(roll) / 2 * 50)
+            rate(abs(roll) / 2 * 5)
             x, y, z = 0, 1, 0
             ang = -0.005
             eyeball.pos[0] -= 0.0025
@@ -190,7 +200,7 @@ while True:  # Endless Loop
 
         if pitch < -50:
             roll = 0
-            rate(abs(pitch)/2*50)
+            rate(abs(pitch)/2*5)
             ang = -0.005
             x,y,z = 1,0,0
         elif pitch >50:
@@ -206,5 +216,13 @@ while True:  # Endless Loop
         v = rotate(v,angle=ang,  axis=(x,y,z))
         e.pos = eyeball.pos + v
         t += dt
+        # scene.bind('keydown', process)
         # e.rotate(angle = ang, axis = (x,y,z))
+
+
+if success ==True:
+    T2 = text(text='Good work!',
+              align='center', color=color.green, pos=(0, 1, 0))
+    T.visible = False
+
 
